@@ -242,20 +242,20 @@
 | ASSM-06 | Phase 4 | Pending |
 | PARAM-01 | Phase 5 | Pending |
 | PARAM-02 | Phase 5 | Pending |
+| TIME-01 | Phase 5 | Pending |
+| TIME-02 | Phase 5 | Pending |
+| TIME-03 | Phase 5 | Pending |
 | DISC-01 | Phase 5 | Pending |
 | DISC-02 | Phase 5 | Pending |
 | DISC-03 | Phase 5 | Pending |
 | DISC-04 | Phase 5 | Pending |
 | DISC-05 | Phase 5 | Pending |
-| TIME-01 | Phase 5 | Pending |
-| TIME-02 | Phase 5 | Pending |
-| TIME-03 | Phase 5 | Pending |
 
 **Coverage:**
-- v1 requirements: 78 total
-- Mapped to phases: 78
-- Unmapped: 0 ✓
+- v1 requirements: 83 total
+- Mapped to phases: 83
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-13*
-*Last updated: 2026-03-13 after initial definition*
+*Last updated: 2026-03-13 after roadmap creation*

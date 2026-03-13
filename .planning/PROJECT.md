@@ -30,6 +30,8 @@ Every MCP tool must actually work end-to-end — from tool call through add-in h
 - [ ] Higher-level workflow guides in skills (e.g., "how to create a finger joint", "design a gear")
 - [ ] Tool reference skills documenting all available tools and their parameters
 - [ ] Direct parallel between MCP tools and Fusion 360 API capabilities
+- [ ] Timeline manipulation (get_timeline, edit_at_timeline, undo_to_marker)
+- [ ] Parametric design via UserParameters API
 
 ### Out of Scope
 
@@ -47,8 +49,10 @@ Every MCP tool must actually work end-to-end — from tool call through add-in h
 - Several handlers have bare exception catching that swallows errors silently
 - No version checking between server and add-in
 - The project was the best available Fusion 360 MCP implementation found online
+- This is NOT our own repo — will need to fork and repoint remote at some point
 - Skills (fusion360-skill, fusion360-issues, fusion360-spatial) already exist but need alignment with expanded tool coverage
 - Other AI models should be able to discover and use the tools through rich descriptions and resource endpoints
+- Critical risk: threading violation — add-in calls Fusion API from background thread, needs CustomEvent pattern
 
 ## Constraints
 
@@ -56,6 +60,7 @@ Every MCP tool must actually work end-to-end — from tool call through add-in h
 - **File IPC**: Keep the existing file-system communication approach
 - **Fusion 360 API**: Limited to what Fusion 360's Python API (`adsk.core`, `adsk.fusion`) exposes
 - **Units**: All dimensions in centimeters (Fusion 360 internal unit)
+- **Two-runtime isolation**: MCP server (system Python 3.10+) and add-in (embedded Python 3.12.4) cannot share libraries
 
 ## Key Decisions
 
@@ -66,6 +71,9 @@ Every MCP tool must actually work end-to-end — from tool call through add-in h
 | Tools + Resources for discoverability | Rich tool docstrings AND MCP resource endpoints for deeper reference | — Pending |
 | Close existing gap before expanding | 30 broken tools need fixing before adding new ones | — Pending |
 | Skip CAM/sheet metal/T-splines | Personal tooling scope — not needed now | — Pending |
+| CustomEvent threading pattern | Fix threading violation before adding handlers | — Pending |
+| Dict dispatch + handler modules | Scale add-in from 9 to 78+ handlers cleanly | — Pending |
+| Timeline in v1 | Undo/rollback is essential for iterative design workflow | — Pending |
 
 ---
-*Last updated: 2026-03-13 after initialization*
+*Last updated: 2026-03-13 after requirements definition*
