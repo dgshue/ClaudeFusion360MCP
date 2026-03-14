@@ -773,6 +773,182 @@ def import_mesh(filepath: str, unit: str = "mm") -> dict:
     return send_fusion_command("import_mesh", {"filepath": filepath, "unit": unit})
 
 # =============================================================================
+# SKETCH CONSTRAINTS (Phase 2)
+# =============================================================================
+
+@mcp.tool()
+def constrain_horizontal(curve_index: int) -> dict:
+    """Constrain a sketch line to be horizontal.
+
+    Args:
+        curve_index: Index of the line to constrain. Use get_sketch_info() to see curves.
+    """
+    return send_fusion_command("constrain_horizontal", {"curve_index": curve_index})
+
+@mcp.tool()
+def constrain_vertical(curve_index: int) -> dict:
+    """Constrain a sketch line to be vertical.
+
+    Args:
+        curve_index: Index of the line to constrain. Use get_sketch_info() to see curves.
+    """
+    return send_fusion_command("constrain_vertical", {"curve_index": curve_index})
+
+@mcp.tool()
+def constrain_perpendicular(curve_index: int, curve_index_2: int) -> dict:
+    """Constrain two sketch lines to be perpendicular (90 degrees).
+
+    Args:
+        curve_index: First line index
+        curve_index_2: Second line index
+    """
+    return send_fusion_command("constrain_perpendicular", {
+        "curve_index": curve_index, "curve_index_2": curve_index_2
+    })
+
+@mcp.tool()
+def constrain_parallel(curve_index: int, curve_index_2: int) -> dict:
+    """Constrain two sketch lines to be parallel.
+
+    Args:
+        curve_index: First line index
+        curve_index_2: Second line index
+    """
+    return send_fusion_command("constrain_parallel", {
+        "curve_index": curve_index, "curve_index_2": curve_index_2
+    })
+
+@mcp.tool()
+def constrain_tangent(curve_index: int, curve_index_2: int) -> dict:
+    """Constrain two sketch curves to be tangent at their nearest endpoints.
+
+    Args:
+        curve_index: First curve index (line, arc, circle, or spline)
+        curve_index_2: Second curve index
+    """
+    return send_fusion_command("constrain_tangent", {
+        "curve_index": curve_index, "curve_index_2": curve_index_2
+    })
+
+@mcp.tool()
+def constrain_coincident(point_index: int, curve_index: int = None, point_index_2: int = None) -> dict:
+    """Constrain a sketch point to lie on a curve or coincide with another point.
+
+    Args:
+        point_index: The point to constrain
+        curve_index: Target curve (point will be placed on this curve)
+        point_index_2: Target point (points will coincide). Provide curve_index OR point_index_2.
+
+    Use get_sketch_info() to see available point and curve indices.
+    """
+    params = {"point_index": point_index}
+    if curve_index is not None:
+        params["curve_index"] = curve_index
+    if point_index_2 is not None:
+        params["point_index_2"] = point_index_2
+    return send_fusion_command("constrain_coincident", params)
+
+@mcp.tool()
+def constrain_concentric(curve_index: int, curve_index_2: int) -> dict:
+    """Constrain two circles or arcs to share the same center point.
+
+    Args:
+        curve_index: First circle/arc index
+        curve_index_2: Second circle/arc index
+    """
+    return send_fusion_command("constrain_concentric", {
+        "curve_index": curve_index, "curve_index_2": curve_index_2
+    })
+
+@mcp.tool()
+def constrain_equal(curve_index: int, curve_index_2: int) -> dict:
+    """Constrain two sketch curves to have equal size (lines: same length, circles: same radius).
+
+    Args:
+        curve_index: First curve index
+        curve_index_2: Second curve index (must be same type as first)
+    """
+    return send_fusion_command("constrain_equal", {
+        "curve_index": curve_index, "curve_index_2": curve_index_2
+    })
+
+@mcp.tool()
+def constrain_symmetric(symmetry_curve_index: int, curve_index: int = None, curve_index_2: int = None,
+                         point_index: int = None, point_index_2: int = None) -> dict:
+    """Constrain two entities to be symmetric about a line.
+
+    Args:
+        symmetry_curve_index: The line of symmetry
+        curve_index: First curve (use with curve_index_2 for curve symmetry)
+        curve_index_2: Second curve
+        point_index: First point (use with point_index_2 for point symmetry)
+        point_index_2: Second point
+
+    Provide either (curve_index + curve_index_2) or (point_index + point_index_2).
+    """
+    params = {"symmetry_curve_index": symmetry_curve_index}
+    if curve_index is not None:
+        params["curve_index"] = curve_index
+    if curve_index_2 is not None:
+        params["curve_index_2"] = curve_index_2
+    if point_index is not None:
+        params["point_index"] = point_index
+    if point_index_2 is not None:
+        params["point_index_2"] = point_index_2
+    return send_fusion_command("constrain_symmetric", params)
+
+# =============================================================================
+# SKETCH DIMENSIONS (Phase 2)
+# =============================================================================
+
+@mcp.tool()
+def dimension_distance(value: float, curve_index: int = None, point_index: int = None, point_index_2: int = None) -> dict:
+    """Add a distance dimension to constrain length between two points or along a curve.
+
+    Args:
+        value: The dimension value in cm (required -- dimensions drive geometry)
+        curve_index: Line to dimension (uses its start/end points)
+        point_index: First point (use with point_index_2 for point-to-point)
+        point_index_2: Second point
+
+    Provide either curve_index OR (point_index + point_index_2).
+    """
+    params = {"value": value}
+    if curve_index is not None:
+        params["curve_index"] = curve_index
+    if point_index is not None:
+        params["point_index"] = point_index
+    if point_index_2 is not None:
+        params["point_index_2"] = point_index_2
+    return send_fusion_command("dimension_distance", params)
+
+@mcp.tool()
+def dimension_radial(curve_index: int, value: float, type: str = "diameter") -> dict:
+    """Add a diameter or radius dimension to a circle or arc.
+
+    Args:
+        curve_index: Index of the circle or arc to dimension
+        value: The dimension value in cm (diameter or radius depending on type)
+        type: "diameter" or "radius" (default "diameter")
+    """
+    return send_fusion_command("dimension_radial", {
+        "curve_index": curve_index, "value": value, "type": type
+    })
+
+@mcp.tool()
+def dimension_angular(curve_index: int, curve_index_2: int, value: float) -> dict:
+    """Add an angular dimension between two sketch lines.
+
+    Args:
+        curve_index: First line index
+        curve_index_2: Second line index
+        value: Angle value in degrees
+    """
+    return send_fusion_command("dimension_angular", {
+        "curve_index": curve_index, "curve_index_2": curve_index_2, "value": value
+    })
+
+# =============================================================================
 # MAIN
 # =============================================================================
 
