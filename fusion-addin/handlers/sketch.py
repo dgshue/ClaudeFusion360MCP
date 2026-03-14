@@ -1,6 +1,15 @@
 import adsk.core
 import adsk.fusion
 import math
+import os
+import sys
+
+_addin_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _addin_dir not in sys.path:
+    sys.path.insert(0, _addin_dir)
+
+from helpers.coordinates import transform_to_sketch_coords, transform_from_sketch_coords
+from helpers.bodies import get_sketch
 
 
 def create_sketch(design, rootComp, params):
@@ -31,85 +40,145 @@ def create_sketch(design, rootComp, params):
 
 
 def draw_line(design, rootComp, params):
-    if rootComp.sketches.count == 0:
-        return {"success": False, "error": "No sketches - call create_sketch first"}
-    sketch = rootComp.sketches.item(rootComp.sketches.count - 1)
-    p1 = adsk.core.Point3D.create(params['x1'], params['y1'], 0)
-    p2 = adsk.core.Point3D.create(params['x2'], params['y2'], 0)
+    try:
+        sketch = get_sketch(rootComp)
+    except ValueError as e:
+        return {"success": False, "error": str(e)}
+
+    x1, y1 = transform_to_sketch_coords(params['x1'], params['y1'], sketch)
+    x2, y2 = transform_to_sketch_coords(params['x2'], params['y2'], sketch)
+    p1 = adsk.core.Point3D.create(x1, y1, 0)
+    p2 = adsk.core.Point3D.create(x2, y2, 0)
     line = sketch.sketchCurves.sketchLines.addByTwoPoints(p1, p2)
-    return {"success": True, "line_length": line.length}
+
+    rx1, ry1 = transform_from_sketch_coords(p1.x, p1.y, sketch)
+    rx2, ry2 = transform_from_sketch_coords(p2.x, p2.y, sketch)
+    return {
+        "success": True,
+        "line_length": line.length,
+        "start": [rx1, ry1],
+        "end": [rx2, ry2]
+    }
 
 
 def draw_circle(design, rootComp, params):
-    if rootComp.sketches.count == 0:
-        return {"success": False, "error": "No sketches - call create_sketch first"}
-    sketch = rootComp.sketches.item(rootComp.sketches.count - 1)
-    center = adsk.core.Point3D.create(params['center_x'], params['center_y'], 0)
-    sketch.sketchCurves.sketchCircles.addByCenterRadius(center, params['radius'])
-    return {"success": True}
+    try:
+        sketch = get_sketch(rootComp)
+    except ValueError as e:
+        return {"success": False, "error": str(e)}
+
+    cx, cy = transform_to_sketch_coords(params['center_x'], params['center_y'], sketch)
+    center = adsk.core.Point3D.create(cx, cy, 0)
+    circle = sketch.sketchCurves.sketchCircles.addByCenterRadius(center, params['radius'])
+
+    rcx, rcy = transform_from_sketch_coords(center.x, center.y, sketch)
+    return {
+        "success": True,
+        "center": [rcx, rcy],
+        "radius": params['radius']
+    }
 
 
 def draw_rectangle(design, rootComp, params):
-    if rootComp.sketches.count == 0:
-        return {"success": False, "error": "No sketches - call create_sketch first"}
-    sketch = rootComp.sketches.item(rootComp.sketches.count - 1)
-    p1 = adsk.core.Point3D.create(params['x1'], params['y1'], 0)
-    p2 = adsk.core.Point3D.create(params['x2'], params['y2'], 0)
+    try:
+        sketch = get_sketch(rootComp)
+    except ValueError as e:
+        return {"success": False, "error": str(e)}
+
+    x1, y1 = transform_to_sketch_coords(params['x1'], params['y1'], sketch)
+    x2, y2 = transform_to_sketch_coords(params['x2'], params['y2'], sketch)
+    p1 = adsk.core.Point3D.create(x1, y1, 0)
+    p2 = adsk.core.Point3D.create(x2, y2, 0)
     sketch.sketchCurves.sketchLines.addTwoPointRectangle(p1, p2)
-    return {"success": True}
+
+    rx1, ry1 = transform_from_sketch_coords(p1.x, p1.y, sketch)
+    rx2, ry2 = transform_from_sketch_coords(p2.x, p2.y, sketch)
+    return {
+        "success": True,
+        "corner1": [rx1, ry1],
+        "corner2": [rx2, ry2]
+    }
 
 
 def draw_arc(design, rootComp, params):
-    if rootComp.sketches.count == 0:
-        return {"success": False, "error": "No sketches - call create_sketch first"}
-    sketch = rootComp.sketches.item(rootComp.sketches.count - 1)
+    try:
+        sketch = get_sketch(rootComp)
+    except ValueError as e:
+        return {"success": False, "error": str(e)}
 
-    center_x = params.get('center_x', 0)
-    center_y = params.get('center_y', 0)
-    radius = params.get('radius', 1)
-    start_angle = math.radians(params.get('start_angle', 0))
-    end_angle = math.radians(params.get('end_angle', 180))
+    # MCP server sends center_x, center_y, start_x, start_y, end_x, end_y
+    center_x, center_y = transform_to_sketch_coords(
+        params['center_x'], params['center_y'], sketch
+    )
+    start_x, start_y = transform_to_sketch_coords(
+        params['start_x'], params['start_y'], sketch
+    )
+    end_x, end_y = transform_to_sketch_coords(
+        params['end_x'], params['end_y'], sketch
+    )
 
     center = adsk.core.Point3D.create(center_x, center_y, 0)
-    sweep_angle = end_angle - start_angle
+    start_point = adsk.core.Point3D.create(start_x, start_y, 0)
 
-    start_point = adsk.core.Point3D.create(
-        center_x + radius * math.cos(start_angle),
-        center_y + radius * math.sin(start_angle),
-        0
-    )
+    # Compute sweep angle from center-to-start and center-to-end vectors
+    dx_start = start_x - center_x
+    dy_start = start_y - center_y
+    dx_end = end_x - center_x
+    dy_end = end_y - center_y
+
+    angle_start = math.atan2(dy_start, dx_start)
+    angle_end = math.atan2(dy_end, dx_end)
+    sweep_angle = angle_end - angle_start
+    # Ensure positive sweep (counterclockwise)
+    if sweep_angle <= 0:
+        sweep_angle += 2 * math.pi
 
     arc = sketch.sketchCurves.sketchArcs.addByCenterStartSweep(
         center, start_point, sweep_angle
     )
-    return {"success": True, "arc_length": arc.length}
+
+    rcx, rcy = transform_from_sketch_coords(center_x, center_y, sketch)
+    rsx, rsy = transform_from_sketch_coords(start_x, start_y, sketch)
+    return {
+        "success": True,
+        "arc_length": arc.length,
+        "center": [rcx, rcy],
+        "start": [rsx, rsy]
+    }
 
 
 def draw_polygon(design, rootComp, params):
-    if rootComp.sketches.count == 0:
-        return {"success": False, "error": "No sketches - call create_sketch first"}
-    sketch = rootComp.sketches.item(rootComp.sketches.count - 1)
+    try:
+        sketch = get_sketch(rootComp)
+    except ValueError as e:
+        return {"success": False, "error": str(e)}
 
     sides = params.get('sides', 6)
-    center_x = params.get('center_x', 0)
-    center_y = params.get('center_y', 0)
-    radius = params.get('radius', 1)
-
     if sides < 3:
         return {"success": False, "error": "Polygon must have at least 3 sides"}
 
+    cx, cy = transform_to_sketch_coords(
+        params['center_x'], params['center_y'], sketch
+    )
+    radius = params['radius']
+
     points = []
     for i in range(sides):
-        angle = 2 * math.pi * i / sides - math.pi / 2  # start from top
-        x = center_x + radius * math.cos(angle)
-        y = center_y + radius * math.sin(angle)
-        points.append(adsk.core.Point3D.create(x, y, 0))
+        angle = 2 * math.pi * i / sides
+        px = cx + radius * math.cos(angle)
+        py = cy + radius * math.sin(angle)
+        points.append(adsk.core.Point3D.create(px, py, 0))
 
     lines = sketch.sketchCurves.sketchLines
     for i in range(sides):
         lines.addByTwoPoints(points[i], points[(i + 1) % sides])
 
-    return {"success": True, "sides": sides}
+    rcx, rcy = transform_from_sketch_coords(cx, cy, sketch)
+    return {
+        "success": True,
+        "sides": sides,
+        "center": [rcx, rcy]
+    }
 
 
 def finish_sketch(design, rootComp, params):
