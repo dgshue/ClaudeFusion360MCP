@@ -3,12 +3,23 @@ import adsk.fusion
 
 
 def get_design_info(design, rootComp, params):
+    active_sketch = None
+    for i in range(rootComp.sketches.count):
+        sk = rootComp.sketches.item(i)
+        try:
+            if sk.isActive:
+                active_sketch = sk.name
+                break
+        except Exception:
+            pass
+
     return {
         "success": True,
         "design_name": design.parentDocument.name,
         "body_count": rootComp.bRepBodies.count,
         "sketch_count": rootComp.sketches.count,
-        "component_count": rootComp.occurrences.count
+        "component_count": rootComp.occurrences.count,
+        "active_sketch": active_sketch
     }
 
 

@@ -166,9 +166,15 @@ def extrude(distance: float, profile_index: int = 0, taper_angle: float = 0) -> 
     })
 
 @mcp.tool()
-def revolve(angle: float) -> dict:
-    """Revolve the most recent sketch profile around an axis (degrees)"""
-    return send_fusion_command("revolve", {"angle": angle})
+def revolve(angle: float, axis: str = "Y") -> dict:
+    """
+    Revolve the most recent sketch profile around an axis (degrees).
+
+    Args:
+        angle: Revolve angle in degrees (360 for full revolution)
+        axis: Revolve axis - "X", "Y", or "Z" (default "Y")
+    """
+    return send_fusion_command("revolve", {"angle": angle, "axis": axis})
 
 @mcp.tool()
 def fillet(radius: float, edges: list = None, body_index: int = None) -> dict:

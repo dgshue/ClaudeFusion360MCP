@@ -2,6 +2,15 @@ import adsk.core
 import adsk.fusion
 import math
 
+import os
+import sys
+_addin_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _addin_dir not in sys.path:
+    sys.path.insert(0, _addin_dir)
+
+from helpers.bodies import get_body
+from helpers.selection import resolve_edges
+
 
 def extrude(design, rootComp, params):
     if rootComp.sketches.count == 0:
@@ -10,7 +19,7 @@ def extrude(design, rootComp, params):
     if sketch.profiles.count == 0:
         return {"success": False, "error": "No profiles in sketch. Draw geometry before extruding."}
 
-    profile_index = params.get('profile_index', sketch.profiles.count - 1)
+    profile_index = params.get('profile_index', 0)
     if profile_index < 0 or profile_index >= sketch.profiles.count:
         return {
             "success": False,
@@ -22,13 +31,9 @@ def extrude(design, rootComp, params):
     ext_input = extrudes.createInput(profile, adsk.fusion.FeatureOperations.NewBodyFeatureOperation)
     ext_input.setDistanceExtent(False, adsk.core.ValueInput.createByReal(params['distance']))
 
-    taper_angle = params.get('taper_angle', None)
-    if taper_angle is not None:
-        ext_input.setDistanceExtent(
-            False,
-            adsk.core.ValueInput.createByReal(params['distance'])
-        )
-        ext_input.taperAngle = adsk.core.ValueInput.createByString(f"{taper_angle} deg")
+    taper_angle = params.get('taper_angle', 0)
+    if taper_angle != 0:
+        ext_input.taperAngle = adsk.core.ValueInput.createByReal(math.radians(taper_angle))
 
     ext_feature = extrudes.add(ext_input)
     return {"success": True, "feature_name": ext_feature.name}
@@ -61,29 +66,21 @@ def revolve(design, rootComp, params):
 
 
 def fillet(design, rootComp, params):
-    if rootComp.bRepBodies.count == 0:
-        return {"success": False, "error": "No bodies. Create geometry first."}
+    try:
+        body = get_body(rootComp, params.get('body_index'))
+    except ValueError as e:
+        return {"success": False, "error": str(e)}
 
-    body_index = params.get('body_index', rootComp.bRepBodies.count - 1)
-    if body_index < 0 or body_index >= rootComp.bRepBodies.count:
-        return {
-            "success": False,
-            "error": f"Body index {body_index} out of range. Design has {rootComp.bRepBodies.count} bodies (0-{rootComp.bRepBodies.count - 1})."
-        }
-    body = rootComp.bRepBodies.item(body_index)
-
-    edge_indices = params.get('edges', None)
+    edge_selectors = params.get('edges', None)
     edges = adsk.core.ObjectCollection.create()
 
-    if edge_indices is not None:
-        for idx in edge_indices:
-            if isinstance(idx, int):
-                if idx < 0 or idx >= body.edges.count:
-                    return {
-                        "success": False,
-                        "error": f"Edge index {idx} out of range. Body has {body.edges.count} edges (0-{body.edges.count - 1}). Use get_body_info() to see available edges."
-                    }
-                edges.add(body.edges.item(idx))
+    if edge_selectors is not None:
+        try:
+            resolved = resolve_edges(body, edge_selectors)
+        except ValueError as e:
+            return {"success": False, "error": str(e)}
+        for edge in resolved:
+            edges.add(edge)
     else:
         for edge in body.edges:
             edges.add(edge)

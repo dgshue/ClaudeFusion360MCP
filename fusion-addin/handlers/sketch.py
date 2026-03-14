@@ -10,19 +10,23 @@ def create_sketch(design, rootComp, params):
         'XZ': rootComp.xZConstructionPlane,
         'YZ': rootComp.yZConstructionPlane
     }
-    plane = plane_map.get(plane_name)
-    if not plane:
+    base_plane = plane_map.get(plane_name)
+    if not base_plane:
         return {"success": False, "error": f"Invalid plane '{plane_name}'. Use 'XY', 'XZ', or 'YZ'."}
 
-    offset = params.get('offset', None)
-    if offset is not None and offset != 0:
+    plane = base_plane
+    offset = params.get('offset', 0)
+    if offset != 0:
         planes = rootComp.constructionPlanes
         plane_input = planes.createInput()
         offset_val = adsk.core.ValueInput.createByReal(offset)
-        plane_input.setByOffset(plane, offset_val)
+        plane_input.setByOffset(base_plane, offset_val)
         plane = planes.add(plane_input)
 
     sketch = rootComp.sketches.add(plane)
+    # Store base plane name in sketch attributes so coordinate correction
+    # can detect XZ plane even on offset construction planes
+    sketch.attributes.add('FusionMCP', 'base_plane', plane_name)
     return {"success": True, "sketch_name": sketch.name, "plane": plane_name}
 
 

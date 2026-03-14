@@ -7,10 +7,20 @@ def detect_sketch_plane(sketch):
 
     Returns 'XY', 'XZ', 'YZ', or 'custom'.
 
-    Primary method: Check the sketch's reference plane against the root
+    Primary method: Check FusionMCP attribute (set by create_sketch handler,
+    works even for offset construction planes).
+    Secondary method: Check the sketch's reference plane against the root
     component's construction planes.
     Fallback: Analyze the sketch transform matrix.
     """
+    # Check FusionMCP attribute first (handles offset planes)
+    try:
+        attr = sketch.attributes.itemByName('FusionMCP', 'base_plane')
+        if attr and attr.value in ('XY', 'XZ', 'YZ'):
+            return attr.value
+    except Exception:
+        pass
+
     try:
         ref_plane = sketch.referencePlane
         rootComp = sketch.parentComponent
