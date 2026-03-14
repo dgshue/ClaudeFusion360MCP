@@ -16,7 +16,10 @@ def get_sketch_info(design, rootComp, params):
     """Get detailed information about the active sketch including all curves,
     points, constraints, dimensions, and constraint status."""
 
-    sketch = get_sketch(rootComp)
+    try:
+        sketch = get_sketch(rootComp)
+    except ValueError as e:
+        return {"success": False, "error": str(e)}
 
     # Sketch metadata
     sketch_name = sketch.name
@@ -119,8 +122,22 @@ def get_sketch_info(design, rootComp, params):
             })
 
     # 5. Constraint status
+    # Check for over-constrained: any constraint with isDriven or conflicting state
+    has_over_constrained = False
+    for i in range(sketch.sketchCurves.count):
+        curve = sketch.sketchCurves.item(i)
+        if not curve.isConstruction:
+            try:
+                if hasattr(curve, 'isOverConstrained') and curve.isOverConstrained:
+                    has_over_constrained = True
+                    break
+            except Exception:
+                pass
+
     if non_construction_count == 0:
         constraint_status = "no geometry"
+    elif has_over_constrained:
+        constraint_status = "over-constrained"
     elif fully_constrained_count == non_construction_count:
         constraint_status = "fully constrained"
     else:
