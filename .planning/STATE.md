@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-05-PLAN.md
-last_updated: "2026-03-14T00:29:53.287Z"
+stopped_at: Completed 01-04-PLAN.md
+last_updated: "2026-03-14T00:30:45.431Z"
 last_activity: 2026-03-14 -- Completed Plan 01-01 (Infrastructure Foundation)
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 5
-  completed_plans: 2
+  completed_plans: 3
   percent: 20
 ---
 
@@ -52,6 +52,7 @@ Progress: [##........] 20%
 *Updated after each plan completion*
 | Phase 01 P01 | 6min | 2 tasks | 14 files |
 | Phase 01 P05 | 1min | 2 tasks | 3 files |
+| Phase 01 P04 | 2min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -69,6 +70,8 @@ Recent decisions affecting current work:
 - [Phase 01]: undo uses try/except per iteration for accurate count reporting
 - [Phase 01]: delete_body/delete_sketch delegate to shared helpers for consistency
 - [Phase 01]: export_3mf uses two-stage fallback with clear error on unsupported versions
+- [Phase 01]: compose rotation via transformBy instead of setToRotation to preserve position
+- [Phase 01]: check_interference operates on occurrences not root bodies for assembly correctness
 
 ### Pending Todos
 
@@ -81,6 +84,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-14T00:29:53.282Z
-Stopped at: Completed 01-05-PLAN.md
+Last session: 2026-03-14T00:30:45.424Z
+Stopped at: Completed 01-04-PLAN.md
 Resume file: None
