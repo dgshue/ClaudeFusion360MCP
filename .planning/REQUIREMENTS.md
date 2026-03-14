@@ -85,21 +85,21 @@
 
 ### Sketch Constraints
 
-- [ ] **CNST-01**: `add_constraint` tool and handler for horizontal constraints
-- [ ] **CNST-02**: `add_constraint` tool and handler for vertical constraints
-- [ ] **CNST-03**: `add_constraint` tool and handler for perpendicular constraints
-- [ ] **CNST-04**: `add_constraint` tool and handler for parallel constraints
-- [ ] **CNST-05**: `add_constraint` tool and handler for tangent constraints
-- [ ] **CNST-06**: `add_constraint` tool and handler for coincident constraints
-- [ ] **CNST-07**: `add_constraint` tool and handler for concentric constraints
-- [ ] **CNST-08**: `add_constraint` tool and handler for equal constraints
-- [ ] **CNST-09**: `add_constraint` tool and handler for symmetric constraints
+- [x] **CNST-01**: `add_constraint` tool and handler for horizontal constraints
+- [x] **CNST-02**: `add_constraint` tool and handler for vertical constraints
+- [x] **CNST-03**: `add_constraint` tool and handler for perpendicular constraints
+- [x] **CNST-04**: `add_constraint` tool and handler for parallel constraints
+- [x] **CNST-05**: `add_constraint` tool and handler for tangent constraints
+- [x] **CNST-06**: `add_constraint` tool and handler for coincident constraints
+- [x] **CNST-07**: `add_constraint` tool and handler for concentric constraints
+- [x] **CNST-08**: `add_constraint` tool and handler for equal constraints
+- [x] **CNST-09**: `add_constraint` tool and handler for symmetric constraints
 
 ### Sketch Dimensions
 
-- [ ] **DIM-01**: `add_dimension` tool and handler for distance dimensions
-- [ ] **DIM-02**: `add_dimension` tool and handler for diameter/radius dimensions
-- [ ] **DIM-03**: `add_dimension` tool and handler for angular dimensions
+- [x] **DIM-01**: `add_dimension` tool and handler for distance dimensions
+- [x] **DIM-02**: `add_dimension` tool and handler for diameter/radius dimensions
+- [x] **DIM-03**: `add_dimension` tool and handler for angular dimensions
 
 ### New 3D Features
 
@@ -215,18 +215,18 @@
 | NSKCH-07 | Phase 2 | Complete |
 | NSKCH-08 | Phase 2 | Complete |
 | NSKCH-09 | Phase 2 | Complete |
-| CNST-01 | Phase 2 | Pending |
-| CNST-02 | Phase 2 | Pending |
-| CNST-03 | Phase 2 | Pending |
-| CNST-04 | Phase 2 | Pending |
-| CNST-05 | Phase 2 | Pending |
-| CNST-06 | Phase 2 | Pending |
-| CNST-07 | Phase 2 | Pending |
-| CNST-08 | Phase 2 | Pending |
-| CNST-09 | Phase 2 | Pending |
-| DIM-01 | Phase 2 | Pending |
-| DIM-02 | Phase 2 | Pending |
-| DIM-03 | Phase 2 | Pending |
+| CNST-01 | Phase 2 | Complete |
+| CNST-02 | Phase 2 | Complete |
+| CNST-03 | Phase 2 | Complete |
+| CNST-04 | Phase 2 | Complete |
+| CNST-05 | Phase 2 | Complete |
+| CNST-06 | Phase 2 | Complete |
+| CNST-07 | Phase 2 | Complete |
+| CNST-08 | Phase 2 | Complete |
+| CNST-09 | Phase 2 | Complete |
+| DIM-01 | Phase 2 | Complete |
+| DIM-02 | Phase 2 | Complete |
+| DIM-03 | Phase 2 | Complete |
 | NFEAT-01 | Phase 3 | Pending |
 | NFEAT-02 | Phase 3 | Pending |
 | NFEAT-03 | Phase 3 | Pending |

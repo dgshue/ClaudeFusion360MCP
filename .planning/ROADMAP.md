@@ -106,7 +106,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation and Gap Closure | 5/5 | Complete |  |
-| 2. Sketch Completeness | 2/4 | In Progress|  |
+| 2. Sketch Completeness | 3/4 | In Progress|  |
 | 3. Advanced 3D Features | 0/1 | Not started | - |
 | 4. Assembly Enhancement | 0/1 | Not started | - |
 | 5. Parametric, Timeline, and Discoverability | 0/1 | Not started | - |
