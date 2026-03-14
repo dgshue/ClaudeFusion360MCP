@@ -1,13 +1,33 @@
+import math
+
 import adsk.core
 import adsk.fusion
 
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__))))
+from helpers.bodies import get_body, get_occurrence
+
 
 def create_component(design, rootComp, params):
+    """Convert a body into a new component, or create an empty component.
+
+    If body_index is provided, moves that body into the new component.
+    Otherwise creates an empty component.
+    """
+    body_index = params.get('body_index', None)
     name = params.get('name', '')
+
     transform = adsk.core.Matrix3D.create()
     occ = rootComp.occurrences.addNewComponent(transform)
+
     if name:
         occ.component.name = name
+
+    if body_index is not None:
+        body = get_body(rootComp, body_index)
+        body.moveToComponent(occ)
+
     return {
         "success": True,
         "component_name": occ.component.name,
@@ -16,6 +36,7 @@ def create_component(design, rootComp, params):
 
 
 def list_components(design, rootComp, params):
+    """List all components with names, positions, and bounding boxes."""
     components = []
     for i in range(rootComp.occurrences.count):
         occ = rootComp.occurrences.item(i)
@@ -25,81 +46,109 @@ def list_components(design, rootComp, params):
             "is_visible": occ.isLightBulbOn,
             "body_count": occ.component.bRepBodies.count
         }
+
         try:
             t = occ.transform
-            comp_info["position"] = {
-                "x": round(t.translation.x, 4),
-                "y": round(t.translation.y, 4),
-                "z": round(t.translation.z, 4)
+            comp_info["position"] = [
+                round(t.translation.x, 4),
+                round(t.translation.y, 4),
+                round(t.translation.z, 4)
+            ]
+        except Exception:
+            comp_info["position"] = [0, 0, 0]
+
+        try:
+            bbox = occ.boundingBox
+            comp_info["bounding_box"] = {
+                "min": [
+                    round(bbox.minPoint.x, 4),
+                    round(bbox.minPoint.y, 4),
+                    round(bbox.minPoint.z, 4)
+                ],
+                "max": [
+                    round(bbox.maxPoint.x, 4),
+                    round(bbox.maxPoint.y, 4),
+                    round(bbox.maxPoint.z, 4)
+                ]
             }
         except Exception:
             pass
+
         components.append(comp_info)
 
     return {
         "success": True,
-        "component_count": rootComp.occurrences.count,
+        "component_count": len(components),
         "components": components
     }
 
 
 def delete_component(design, rootComp, params):
-    index = params.get('index', None)
-    name = params.get('name', None)
-
-    if index is not None:
-        if index < 0 or index >= rootComp.occurrences.count:
-            return {
-                "success": False,
-                "error": f"Component index {index} out of range. Design has {rootComp.occurrences.count} components (0-{rootComp.occurrences.count - 1})."
-            }
-        occ = rootComp.occurrences.item(index)
-        comp_name = occ.component.name
-        occ.deleteMe()
-        return {"success": True, "deleted": comp_name}
-    elif name is not None:
-        for i in range(rootComp.occurrences.count):
-            occ = rootComp.occurrences.item(i)
-            if occ.component.name == name:
-                occ.deleteMe()
-                return {"success": True, "deleted": name}
-        return {"success": False, "error": f"No component named '{name}' found."}
-    else:
-        return {"success": False, "error": "Provide 'index' or 'name' to identify the component to delete."}
+    """Delete a component by name or index."""
+    occ = get_occurrence(
+        rootComp,
+        index=params.get('index', None),
+        name=params.get('name', None)
+    )
+    comp_name = occ.component.name
+    occ.deleteMe()
+    return {"success": True, "deleted": comp_name}
 
 
 def move_component(design, rootComp, params):
-    index = params.get('index', 0)
-    if index < 0 or index >= rootComp.occurrences.count:
-        return {
-            "success": False,
-            "error": f"Component index {index} out of range. Design has {rootComp.occurrences.count} components."
-        }
-    occ = rootComp.occurrences.item(index)
+    """Move a component to an absolute position or by a relative offset.
 
-    x = params.get('x', 0)
-    y = params.get('y', 0)
-    z = params.get('z', 0)
+    Uses standard Fusion 360 coordinates (no XZ correction).
+    """
+    occ = get_occurrence(
+        rootComp,
+        index=params.get('index', None),
+        name=params.get('name', None)
+    )
 
-    transform = occ.transform
-    translation = adsk.core.Vector3D.create(x, y, z)
-    transform.translation = translation
-    occ.transform = transform
-    design.snapshots.add()
+    x = params.get('x', 0.0)
+    y = params.get('y', 0.0)
+    z = params.get('z', 0.0)
+    absolute = params.get('absolute', True)
 
-    return {"success": True, "component": occ.component.name, "position": {"x": x, "y": y, "z": z}}
+    if absolute:
+        transform = occ.transform
+        transform.translation = adsk.core.Vector3D.create(x, y, z)
+        occ.transform = transform
+    else:
+        transform = occ.transform
+        current = transform.translation
+        transform.translation = adsk.core.Vector3D.create(
+            current.x + x,
+            current.y + y,
+            current.z + z
+        )
+        occ.transform = transform
+
+    final_pos = occ.transform.translation
+    return {
+        "success": True,
+        "component": occ.component.name,
+        "position": [
+            round(final_pos.x, 4),
+            round(final_pos.y, 4),
+            round(final_pos.z, 4)
+        ]
+    }
 
 
 def rotate_component(design, rootComp, params):
-    index = params.get('index', 0)
-    if index < 0 or index >= rootComp.occurrences.count:
-        return {
-            "success": False,
-            "error": f"Component index {index} out of range. Design has {rootComp.occurrences.count} components."
-        }
-    occ = rootComp.occurrences.item(index)
+    """Rotate a component around a specified axis and origin.
 
-    import math
+    Uses standard Fusion 360 coordinates (no XZ correction).
+    Composes rotation with existing transform to preserve position.
+    """
+    occ = get_occurrence(
+        rootComp,
+        index=params.get('index', None),
+        name=params.get('name', None)
+    )
+
     angle = math.radians(params.get('angle', 0))
     axis_name = params.get('axis', 'Z').upper()
 
@@ -109,47 +158,71 @@ def rotate_component(design, rootComp, params):
         'Z': adsk.core.Vector3D.create(0, 0, 1)
     }
     axis = axis_map.get(axis_name, adsk.core.Vector3D.create(0, 0, 1))
-    origin = adsk.core.Point3D.create(0, 0, 0)
+    origin = adsk.core.Point3D.create(
+        params.get('origin_x', 0.0),
+        params.get('origin_y', 0.0),
+        params.get('origin_z', 0.0)
+    )
 
-    transform = occ.transform
-    transform.setToRotation(angle, axis, origin)
-    occ.transform = transform
-    design.snapshots.add()
+    # Create a rotation-only matrix
+    rotation_matrix = adsk.core.Matrix3D.create()
+    rotation_matrix.setToRotation(angle, axis, origin)
 
-    return {"success": True, "component": occ.component.name, "angle": params.get('angle', 0), "axis": axis_name}
+    # Compose with current transform to preserve position
+    current_transform = occ.transform
+    current_transform.transformBy(rotation_matrix)
+    occ.transform = current_transform
+
+    return {
+        "success": True,
+        "component": occ.component.name,
+        "angle": params.get('angle', 0),
+        "axis": axis_name
+    }
 
 
 def check_interference(design, rootComp, params):
-    if rootComp.bRepBodies.count < 2:
-        return {"success": False, "error": "Need at least 2 bodies to check interference."}
+    """Detect bounding box collisions between all component pairs."""
+    if rootComp.occurrences.count < 2:
+        return {
+            "success": True,
+            "interference_count": 0,
+            "interferences": [],
+            "message": "Need at least 2 components to check interference."
+        }
 
-    body_indices = params.get('bodies', None)
-    bodies = []
-    if body_indices:
-        for idx in body_indices:
-            if idx >= rootComp.bRepBodies.count:
-                return {"success": False, "error": f"Body index {idx} out of range."}
-            bodies.append(rootComp.bRepBodies.item(idx))
-    else:
-        for i in range(rootComp.bRepBodies.count):
-            bodies.append(rootComp.bRepBodies.item(i))
+    occurrences = []
+    for i in range(rootComp.occurrences.count):
+        occurrences.append(rootComp.occurrences.item(i))
 
     interferences = []
-    for i in range(len(bodies)):
-        for j in range(i + 1, len(bodies)):
-            bb1 = bodies[i].boundingBox
-            bb2 = bodies[j].boundingBox
-            overlaps = (
-                bb1.minPoint.x <= bb2.maxPoint.x and bb1.maxPoint.x >= bb2.minPoint.x and
-                bb1.minPoint.y <= bb2.maxPoint.y and bb1.maxPoint.y >= bb2.minPoint.y and
-                bb1.minPoint.z <= bb2.maxPoint.z and bb1.maxPoint.z >= bb2.minPoint.z
-            )
-            if overlaps:
-                interferences.append({
-                    "body1": bodies[i].name,
-                    "body2": bodies[j].name,
-                    "type": "bounding_box_overlap"
-                })
+    for i in range(len(occurrences)):
+        for j in range(i + 1, len(occurrences)):
+            try:
+                bb1 = occurrences[i].boundingBox
+                bb2 = occurrences[j].boundingBox
+
+                overlaps = (
+                    bb1.minPoint.x <= bb2.maxPoint.x and bb1.maxPoint.x >= bb2.minPoint.x and
+                    bb1.minPoint.y <= bb2.maxPoint.y and bb1.maxPoint.y >= bb2.minPoint.y and
+                    bb1.minPoint.z <= bb2.maxPoint.z and bb1.maxPoint.z >= bb2.minPoint.z
+                )
+
+                if overlaps:
+                    # Calculate overlap volume
+                    overlap_x = max(0, min(bb1.maxPoint.x, bb2.maxPoint.x) - max(bb1.minPoint.x, bb2.minPoint.x))
+                    overlap_y = max(0, min(bb1.maxPoint.y, bb2.maxPoint.y) - max(bb1.minPoint.y, bb2.minPoint.y))
+                    overlap_z = max(0, min(bb1.maxPoint.z, bb2.maxPoint.z) - max(bb1.minPoint.z, bb2.minPoint.z))
+                    overlap_volume = round(overlap_x * overlap_y * overlap_z, 6)
+
+                    interferences.append({
+                        "component1": occurrences[i].component.name,
+                        "component2": occurrences[j].component.name,
+                        "overlap_volume": overlap_volume,
+                        "type": "bounding_box_overlap"
+                    })
+            except Exception:
+                pass
 
     return {
         "success": True,
