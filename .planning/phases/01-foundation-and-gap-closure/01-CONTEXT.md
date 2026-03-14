@@ -31,6 +31,10 @@ Fix the broken foundation (threading violations, error swallowing, coordinate bu
 - Tool responses that return coordinates are also corrected to world-space for input/output consistency
 - All units are centimeters, always — no unit conversion parameters (import_mesh is the one exception with its existing unit param)
 
+### MCP client compatibility
+- MCP server must work with both Claude Code and Claude Desktop — not just one client
+- Ensure transport configuration supports both stdio (Claude Code) and SSE/streamable HTTP if needed
+
 ### Claude's Discretion
 - Threading implementation details (CustomEvent pattern mechanics)
 - Handler module organization structure (dict dispatch layout)
@@ -71,7 +75,8 @@ Fix the broken foundation (threading violations, error swallowing, coordinate bu
 <deferred>
 ## Deferred Ideas
 
-None — discussion stayed within phase scope
+- Smart unit interpretation (detect if user means cm or mm from context) — future phase
+- MCP client compatibility is in-scope for Phase 1 (captured as a decision above)
 
 </deferred>
 
