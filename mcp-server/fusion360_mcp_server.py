@@ -164,6 +164,135 @@ def set_construction(curve_index: int, is_construction: bool = True) -> dict:
     })
 
 # =============================================================================
+# NEW SKETCH PRIMITIVES (Phase 2)
+# =============================================================================
+
+@mcp.tool()
+def draw_spline(points: list) -> dict:
+    """Draw a fitted spline through a collection of points in the active sketch.
+
+    Args:
+        points: List of [x, y] coordinate pairs (minimum 2 points). Units: cm.
+
+    Example: draw_spline(points=[[0,0], [2,3], [5,1], [8,4]])
+    """
+    return send_fusion_command("draw_spline", {"points": points})
+
+@mcp.tool()
+def draw_ellipse(center_x: float, center_y: float, major_radius: float, minor_radius: float, angle: float = 0) -> dict:
+    """Draw an ellipse in the active sketch (units: cm).
+
+    Args:
+        center_x: Center X coordinate
+        center_y: Center Y coordinate
+        major_radius: Semi-major axis length
+        minor_radius: Semi-minor axis length
+        angle: Rotation angle of major axis in degrees (default 0)
+    """
+    return send_fusion_command("draw_ellipse", {
+        "center_x": center_x, "center_y": center_y,
+        "major_radius": major_radius, "minor_radius": minor_radius,
+        "angle": angle
+    })
+
+@mcp.tool()
+def draw_slot(center_x: float, center_y: float, end_x: float, end_y: float, width: float) -> dict:
+    """Draw a center-point slot in the active sketch (units: cm).
+    A slot is a rounded rectangle defined by center, end point, and width.
+
+    Args:
+        center_x: Slot center X
+        center_y: Slot center Y
+        end_x: End point X (defines slot length/direction)
+        end_y: End point Y
+        width: Slot width (perpendicular to length direction)
+    """
+    return send_fusion_command("draw_slot", {
+        "center_x": center_x, "center_y": center_y,
+        "end_x": end_x, "end_y": end_y, "width": width
+    })
+
+@mcp.tool()
+def draw_point(x: float, y: float) -> dict:
+    """Add a reference/construction point to the active sketch (units: cm).
+
+    Args:
+        x: Point X coordinate
+        y: Point Y coordinate
+    """
+    return send_fusion_command("draw_point", {"x": x, "y": y})
+
+@mcp.tool()
+def draw_text(text: str, height: float, x: float = 0, y: float = 0, font: str = None) -> dict:
+    """Draw text in the active sketch. Text profiles can be extruded for embossing/engraving.
+
+    Args:
+        text: The text string to draw
+        height: Text height in cm
+        x: Text position X (default 0)
+        y: Text position Y (default 0)
+        font: Font name (optional, uses system default)
+    """
+    params = {"text": text, "height": height, "x": x, "y": y}
+    if font is not None:
+        params["font"] = font
+    return send_fusion_command("draw_text", params)
+
+# =============================================================================
+# SKETCH OPERATIONS (Phase 2)
+# =============================================================================
+
+@mcp.tool()
+def offset_curves(curve_index: int, distance: float, direction_x: float = 0, direction_y: float = 1) -> dict:
+    """Create offset curves parallel to existing sketch geometry at a uniform distance.
+
+    Args:
+        curve_index: Index of a curve to offset (connected curves are included automatically)
+        distance: Offset distance in cm
+        direction_x: X component of offset direction (default 0)
+        direction_y: Y component of offset direction (default 1)
+
+    Use get_sketch_info() to see available curve indices.
+    """
+    return send_fusion_command("offset_curves", {
+        "curve_index": curve_index, "distance": distance,
+        "direction_x": direction_x, "direction_y": direction_y
+    })
+
+@mcp.tool()
+def project_geometry(body_index: int = 0, edge_index: int = None, face_index: int = None) -> dict:
+    """Project body edges or faces onto the active sketch plane.
+
+    Args:
+        body_index: Which body to project from (default 0)
+        edge_index: Specific edge index to project (optional)
+        face_index: Specific face index to project (optional)
+
+    If neither edge_index nor face_index provided, projects all edges.
+    Use get_body_info() to see available edge/face indices.
+    """
+    params = {"body_index": body_index}
+    if edge_index is not None:
+        params["edge_index"] = edge_index
+    if face_index is not None:
+        params["face_index"] = face_index
+    return send_fusion_command("project_geometry", params)
+
+@mcp.tool()
+def import_svg(file_path: str, x: float = 0, y: float = 0, scale: float = 1.0) -> dict:
+    """Import an SVG file into the active sketch. Uses Fusion 360's native SVG import.
+
+    Args:
+        file_path: Full path to the SVG file
+        x: X position for import origin (default 0)
+        y: Y position for import origin (default 0)
+        scale: Scale factor (default 1.0 = native SVG dimensions)
+    """
+    return send_fusion_command("import_svg", {
+        "file_path": file_path, "x": x, "y": y, "scale": scale
+    })
+
+# =============================================================================
 # 3D FEATURE OPERATIONS (ENHANCED)
 # =============================================================================
 

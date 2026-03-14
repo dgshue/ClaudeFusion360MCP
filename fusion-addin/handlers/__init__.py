@@ -15,8 +15,22 @@ from .joint import (
     create_revolute_joint, create_slider_joint,
     set_joint_angle, set_joint_distance
 )
+from .sketch_primitives import (
+    draw_spline, draw_ellipse, draw_slot, draw_point, draw_text
+)
+from .sketch_ops import (
+    offset_curves, project_geometry, import_svg
+)
 from .utility import undo, delete_body, delete_sketch, fit_view
 from .io import export_stl, export_step, export_3mf, import_mesh
+from .sketch_constraints import (
+    constrain_horizontal, constrain_vertical, constrain_perpendicular,
+    constrain_parallel, constrain_tangent, constrain_coincident,
+    constrain_concentric, constrain_equal, constrain_symmetric
+)
+from .sketch_dimensions import (
+    dimension_distance, dimension_radial, dimension_angular
+)
 
 
 # Dict mapping all 39 tool names (excluding batch, which is handled inline)
@@ -32,6 +46,17 @@ HANDLER_MAP = {
     'draw_polygon': draw_polygon,
     'set_construction': set_construction,
     'finish_sketch': finish_sketch,
+
+    # New sketch primitives (Phase 2)
+    'draw_spline': draw_spline,
+    'draw_ellipse': draw_ellipse,
+    'draw_slot': draw_slot,
+    'draw_point': draw_point,
+    'draw_text': draw_text,
+    # Sketch operations (Phase 2)
+    'offset_curves': offset_curves,
+    'project_geometry': project_geometry,
+    'import_svg': import_svg,
 
     # Feature tools (10)
     'extrude': extrude,
@@ -75,4 +100,20 @@ HANDLER_MAP = {
     'export_step': export_step,
     'export_3mf': export_3mf,
     'import_mesh': import_mesh,
+
+    # Sketch constraints (Phase 2)
+    'constrain_horizontal': constrain_horizontal,
+    'constrain_vertical': constrain_vertical,
+    'constrain_perpendicular': constrain_perpendicular,
+    'constrain_parallel': constrain_parallel,
+    'constrain_tangent': constrain_tangent,
+    'constrain_coincident': constrain_coincident,
+    'constrain_concentric': constrain_concentric,
+    'constrain_equal': constrain_equal,
+    'constrain_symmetric': constrain_symmetric,
+
+    # Sketch dimensions (Phase 2)
+    'dimension_distance': dimension_distance,
+    'dimension_radial': dimension_radial,
+    'dimension_angular': dimension_angular,
 }
