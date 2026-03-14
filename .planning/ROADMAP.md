@@ -49,11 +49,13 @@ Plans:
   3. User can add parametric dimensions (distance, diameter/radius, angular) that drive sketch geometry
   4. User can convert sketch entities to construction geometry, project body edges onto sketch planes, and offset existing curves
   5. User can import SVG files into sketches for complex profile creation
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- [ ] 02-01: TBD
-- [ ] 02-02: TBD
+- [ ] 02-01-PLAN.md -- Sketch entity indexing infrastructure + update existing draw handlers to return entity indices + set_construction handler
+- [ ] 02-02-PLAN.md -- 5 new sketch primitives (spline, ellipse, slot, point, text) + 3 sketch operations (offset, project, import_svg)
+- [ ] 02-03-PLAN.md -- 9 geometric constraint handlers + 3 dimension handlers
+- [ ] 02-04-PLAN.md -- get_sketch_info query tool with semantic labeling and constraint status
 
 ### Phase 3: Advanced 3D Features
 **Goal**: Users can create complex 3D geometry beyond basic extrude/revolve, including swept and lofted shapes, precision holes, threads, and reference geometry
@@ -103,8 +105,8 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation and Gap Closure | 1/5 | In Progress|  |
-| 2. Sketch Completeness | 0/2 | Not started | - |
+| 1. Foundation and Gap Closure | 5/5 | Complete |  |
+| 2. Sketch Completeness | 0/4 | Not started | - |
 | 3. Advanced 3D Features | 0/1 | Not started | - |
 | 4. Assembly Enhancement | 0/1 | Not started | - |
 | 5. Parametric, Timeline, and Discoverability | 0/1 | Not started | - |
