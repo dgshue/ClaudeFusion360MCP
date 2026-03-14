@@ -9,7 +9,7 @@ if _addin_dir not in sys.path:
     sys.path.insert(0, _addin_dir)
 
 from helpers.bodies import get_body
-from helpers.selection import resolve_edges
+from helpers.selection import resolve_edges, resolve_faces
 
 
 def extrude(design, rootComp, params):
@@ -66,19 +66,13 @@ def revolve(design, rootComp, params):
 
 
 def fillet(design, rootComp, params):
-    try:
-        body = get_body(rootComp, params.get('body_index'))
-    except ValueError as e:
-        return {"success": False, "error": str(e)}
+    body = get_body(rootComp, params.get('body_index'))
 
     edge_selectors = params.get('edges', None)
     edges = adsk.core.ObjectCollection.create()
 
     if edge_selectors is not None:
-        try:
-            resolved = resolve_edges(body, edge_selectors)
-        except ValueError as e:
-            return {"success": False, "error": str(e)}
+        resolved = resolve_edges(body, edge_selectors)
         for edge in resolved:
             edges.add(edge)
     else:
@@ -93,89 +87,99 @@ def fillet(design, rootComp, params):
 
 
 def chamfer(design, rootComp, params):
-    if rootComp.bRepBodies.count == 0:
-        return {"success": False, "error": "No bodies. Create geometry first."}
+    body = get_body(rootComp, params.get('body_index'))
 
-    body_index = params.get('body_index', rootComp.bRepBodies.count - 1)
-    body = rootComp.bRepBodies.item(body_index)
-
-    edge_indices = params.get('edges', None)
+    edge_selectors = params.get('edges', None)
     edges = adsk.core.ObjectCollection.create()
 
-    if edge_indices is not None:
-        for idx in edge_indices:
-            if isinstance(idx, int):
-                if idx < 0 or idx >= body.edges.count:
-                    return {
-                        "success": False,
-                        "error": f"Edge index {idx} out of range. Body has {body.edges.count} edges (0-{body.edges.count - 1})."
-                    }
-                edges.add(body.edges.item(idx))
+    if edge_selectors is not None:
+        resolved = resolve_edges(body, edge_selectors)
+        for edge in resolved:
+            edges.add(edge)
     else:
         for edge in body.edges:
             edges.add(edge)
 
-    chamfers = rootComp.features.chamferFeatures
-    chamfer_input = chamfers.createInput(edges, True)
     distance = params.get('distance', params.get('size', 0.1))
-    chamfer_input.setToEqualDistance(adsk.core.ValueInput.createByReal(distance))
+
+    chamfers = rootComp.features.chamferFeatures
+    try:
+        # Newer Fusion API: createInput2
+        chamfer_input = chamfers.createInput2()
+        chamfer_input.chamferEdgeSets.addEqualDistanceChamferEdgeSet(
+            edges,
+            adsk.core.ValueInput.createByReal(distance),
+            True
+        )
+    except AttributeError:
+        # Older Fusion API fallback: createInput
+        chamfer_input = chamfers.createInput(edges, True)
+        chamfer_input.setToEqualDistance(adsk.core.ValueInput.createByReal(distance))
+
     chamfer_feat = chamfers.add(chamfer_input)
     return {"success": True, "feature_name": chamfer_feat.name}
 
 
 def shell(design, rootComp, params):
-    if rootComp.bRepBodies.count == 0:
-        return {"success": False, "error": "No bodies. Create geometry first."}
-
-    body_index = params.get('body_index', rootComp.bRepBodies.count - 1)
-    body = rootComp.bRepBodies.item(body_index)
+    body = get_body(rootComp, params.get('body_index'))
     thickness = params['thickness']
 
-    faces_to_remove = adsk.core.ObjectCollection.create()
-    face_indices = params.get('faces_to_remove', [])
-    for idx in face_indices:
-        if isinstance(idx, int):
-            if idx < 0 or idx >= body.faces.count:
-                return {
-                    "success": False,
-                    "error": f"Face index {idx} out of range. Body has {body.faces.count} faces (0-{body.faces.count - 1})."
-                }
-            faces_to_remove.add(body.faces.item(idx))
+    face_selectors = params.get('faces_to_remove', [])
+    faces_collection = adsk.core.ObjectCollection.create()
+
+    if face_selectors:
+        resolved = resolve_faces(body, face_selectors)
+        for face in resolved:
+            faces_collection.add(face)
 
     shell_feats = rootComp.features.shellFeatures
-    shell_input = shell_feats.createInput(faces_to_remove, False)
+    shell_input = shell_feats.createInput(faces_collection, False)
     shell_input.insideThickness = adsk.core.ValueInput.createByReal(thickness)
     shell_feat = shell_feats.add(shell_input)
     return {"success": True, "feature_name": shell_feat.name}
 
 
 def draft(design, rootComp, params):
-    if rootComp.bRepBodies.count == 0:
-        return {"success": False, "error": "No bodies. Create geometry first."}
-
-    body_index = params.get('body_index', rootComp.bRepBodies.count - 1)
-    body = rootComp.bRepBodies.item(body_index)
+    body = get_body(rootComp, params.get('body_index'))
 
     angle = params.get('angle', 5)
-    face_indices = params.get('faces', [])
+    face_selectors = params.get('faces', [])
 
     faces = adsk.core.ObjectCollection.create()
-    for idx in face_indices:
-        if isinstance(idx, int):
-            if idx < 0 or idx >= body.faces.count:
-                return {
-                    "success": False,
-                    "error": f"Face index {idx} out of range. Body has {body.faces.count} faces (0-{body.faces.count - 1})."
-                }
-            faces.add(body.faces.item(idx))
+    if face_selectors:
+        resolved = resolve_faces(body, face_selectors)
+        for face in resolved:
+            faces.add(face)
 
-    plane = params.get('pull_direction', 'Z')
-    plane_map = {
-        'X': rootComp.xConstructionPlane,
-        'Y': rootComp.yConstructionPlane,
-        'Z': rootComp.zConstructionPlane
-    }
-    pull_plane = plane_map.get(plane.upper(), rootComp.zConstructionPlane)
+    # Determine pull direction plane
+    # Support both explicit pull_x/y/z vector and simple pull_direction string
+    pull_x = params.get('pull_x', None)
+    pull_y = params.get('pull_y', None)
+    pull_z = params.get('pull_z', None)
+
+    if pull_x is not None or pull_y is not None or pull_z is not None:
+        # Use explicit vector components to pick the closest construction plane
+        px = pull_x or 0.0
+        py = pull_y or 0.0
+        pz = pull_z or 0.0
+        # Pick the plane whose normal is most aligned with the pull vector
+        abs_vals = [abs(px), abs(py), abs(pz)]
+        max_idx = abs_vals.index(max(abs_vals))
+        if max_idx == 0:
+            pull_plane = rootComp.xConstructionPlane
+        elif max_idx == 1:
+            pull_plane = rootComp.yConstructionPlane
+        else:
+            pull_plane = rootComp.zConstructionPlane
+    else:
+        # Fall back to string-based pull direction
+        plane_str = params.get('pull_direction', 'Z').upper()
+        plane_map = {
+            'X': rootComp.xConstructionPlane,
+            'Y': rootComp.yConstructionPlane,
+            'Z': rootComp.zConstructionPlane
+        }
+        pull_plane = plane_map.get(plane_str, rootComp.zConstructionPlane)
 
     draft_feats = rootComp.features.draftFeatures
     draft_input = draft_feats.createInput(
@@ -189,11 +193,7 @@ def draft(design, rootComp, params):
 
 
 def pattern_rectangular(design, rootComp, params):
-    if rootComp.bRepBodies.count == 0:
-        return {"success": False, "error": "No bodies. Create geometry first."}
-
-    body_index = params.get('body_index', rootComp.bRepBodies.count - 1)
-    body = rootComp.bRepBodies.item(body_index)
+    body = get_body(rootComp, params.get('body_index'))
 
     entities = adsk.core.ObjectCollection.create()
     entities.add(body)
@@ -221,11 +221,7 @@ def pattern_rectangular(design, rootComp, params):
 
 
 def pattern_circular(design, rootComp, params):
-    if rootComp.bRepBodies.count == 0:
-        return {"success": False, "error": "No bodies. Create geometry first."}
-
-    body_index = params.get('body_index', rootComp.bRepBodies.count - 1)
-    body = rootComp.bRepBodies.item(body_index)
+    body = get_body(rootComp, params.get('body_index'))
 
     entities = adsk.core.ObjectCollection.create()
     entities.add(body)
@@ -252,11 +248,7 @@ def pattern_circular(design, rootComp, params):
 
 
 def mirror(design, rootComp, params):
-    if rootComp.bRepBodies.count == 0:
-        return {"success": False, "error": "No bodies. Create geometry first."}
-
-    body_index = params.get('body_index', rootComp.bRepBodies.count - 1)
-    body = rootComp.bRepBodies.item(body_index)
+    body = get_body(rootComp, params.get('body_index'))
 
     entities = adsk.core.ObjectCollection.create()
     entities.add(body)
@@ -276,33 +268,28 @@ def mirror(design, rootComp, params):
 
 
 def combine(design, rootComp, params):
-    target_index = params.get('target_body', 0)
-    if target_index >= rootComp.bRepBodies.count:
-        return {
-            "success": False,
-            "error": f"Target body index {target_index} out of range. Design has {rootComp.bRepBodies.count} bodies (0-{rootComp.bRepBodies.count - 1})."
-        }
-    target_body = rootComp.bRepBodies.item(target_index)
+    target_body = get_body(rootComp, params.get('target_body', 0))
 
     tool_indices = params.get('tool_bodies', [])
     tools = adsk.core.ObjectCollection.create()
     for idx in tool_indices:
-        if idx >= rootComp.bRepBodies.count:
-            return {
-                "success": False,
-                "error": f"Tool body index {idx} out of range. Design has {rootComp.bRepBodies.count} bodies (0-{rootComp.bRepBodies.count - 1})."
-            }
-        tools.add(rootComp.bRepBodies.item(idx))
+        tool_body = get_body(rootComp, idx)
+        tools.add(tool_body)
 
     op_map = {
         'cut': adsk.fusion.FeatureOperations.CutFeatureOperation,
         'join': adsk.fusion.FeatureOperations.JoinFeatureOperation,
         'intersect': adsk.fusion.FeatureOperations.IntersectFeatureOperation,
     }
+    operation = params.get('operation', 'join')
+    if operation not in op_map:
+        raise ValueError(
+            f"Unknown combine operation '{operation}'. Use 'cut', 'join', or 'intersect'."
+        )
 
     combine_feats = rootComp.features.combineFeatures
     combine_input = combine_feats.createInput(target_body, tools)
-    combine_input.operation = op_map.get(params.get('operation', 'join'))
+    combine_input.operation = op_map[operation]
     combine_input.isKeepToolBodies = params.get('keep_tools', False)
     combine_feat = combine_feats.add(combine_input)
     return {"success": True, "feature_name": combine_feat.name}
