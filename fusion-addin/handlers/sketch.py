@@ -10,6 +10,7 @@ if _addin_dir not in sys.path:
 
 from helpers.coordinates import transform_to_sketch_coords, transform_from_sketch_coords
 from helpers.bodies import get_sketch
+from helpers.sketch_entities import get_curve_index, find_point_index, get_sketch_curve
 
 
 def create_sketch(design, rootComp, params):
@@ -57,7 +58,10 @@ def draw_line(design, rootComp, params):
         "success": True,
         "line_length": line.length,
         "start": [rx1, ry1],
-        "end": [rx2, ry2]
+        "end": [rx2, ry2],
+        "curve_index": get_curve_index(sketch, line),
+        "start_point_index": find_point_index(sketch, line.startSketchPoint),
+        "end_point_index": find_point_index(sketch, line.endSketchPoint)
     }
 
 
@@ -75,7 +79,8 @@ def draw_circle(design, rootComp, params):
     return {
         "success": True,
         "center": [rcx, rcy],
-        "radius": params['radius']
+        "radius": params['radius'],
+        "curve_index": get_curve_index(sketch, circle)
     }
 
 
@@ -89,14 +94,28 @@ def draw_rectangle(design, rootComp, params):
     x2, y2 = transform_to_sketch_coords(params['x2'], params['y2'], sketch)
     p1 = adsk.core.Point3D.create(x1, y1, 0)
     p2 = adsk.core.Point3D.create(x2, y2, 0)
-    sketch.sketchCurves.sketchLines.addTwoPointRectangle(p1, p2)
+    rect_lines = sketch.sketchCurves.sketchLines.addTwoPointRectangle(p1, p2)
+
+    curve_indices = []
+    point_indices = []
+    seen_points = set()
+    for i in range(rect_lines.count):
+        line = rect_lines.item(i)
+        curve_indices.append(get_curve_index(sketch, line))
+        for pt in [line.startSketchPoint, line.endSketchPoint]:
+            pi = find_point_index(sketch, pt)
+            if pi not in seen_points:
+                seen_points.add(pi)
+                point_indices.append(pi)
 
     rx1, ry1 = transform_from_sketch_coords(p1.x, p1.y, sketch)
     rx2, ry2 = transform_from_sketch_coords(p2.x, p2.y, sketch)
     return {
         "success": True,
         "corner1": [rx1, ry1],
-        "corner2": [rx2, ry2]
+        "corner2": [rx2, ry2],
+        "curve_indices": curve_indices,
+        "point_indices": point_indices
     }
 
 
@@ -143,7 +162,10 @@ def draw_arc(design, rootComp, params):
         "success": True,
         "arc_length": arc.length,
         "center": [rcx, rcy],
-        "start": [rsx, rsy]
+        "start": [rsx, rsy],
+        "curve_index": get_curve_index(sketch, arc),
+        "start_point_index": find_point_index(sketch, arc.startSketchPoint),
+        "end_point_index": find_point_index(sketch, arc.endSketchPoint)
     }
 
 
@@ -170,14 +192,32 @@ def draw_polygon(design, rootComp, params):
         points.append(adsk.core.Point3D.create(px, py, 0))
 
     lines = sketch.sketchCurves.sketchLines
+    curve_indices = []
     for i in range(sides):
-        lines.addByTwoPoints(points[i], points[(i + 1) % sides])
+        line = lines.addByTwoPoints(points[i], points[(i + 1) % sides])
+        curve_indices.append(get_curve_index(sketch, line))
 
     rcx, rcy = transform_from_sketch_coords(cx, cy, sketch)
     return {
         "success": True,
         "sides": sides,
-        "center": [rcx, rcy]
+        "center": [rcx, rcy],
+        "curve_indices": curve_indices
+    }
+
+
+def set_construction(design, rootComp, params):
+    try:
+        sketch = get_sketch(rootComp)
+    except ValueError as e:
+        return {"success": False, "error": str(e)}
+    curve = get_sketch_curve(sketch, params['curve_index'])
+    is_construction = params.get('is_construction', True)
+    curve.isConstruction = is_construction
+    return {
+        "success": True,
+        "curve_index": params['curve_index'],
+        "is_construction": curve.isConstruction
     }
 
 

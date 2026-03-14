@@ -146,6 +146,24 @@ def draw_polygon(center_x: float, center_y: float, radius: float, sides: int = 6
     })
 
 # =============================================================================
+# SKETCH ENTITY TOOLS
+# =============================================================================
+
+@mcp.tool()
+def set_construction(curve_index: int, is_construction: bool = True) -> dict:
+    """Toggle a sketch curve between regular and construction geometry.
+    Construction geometry is used as reference but not included in profiles.
+
+    Args:
+        curve_index: Index of the curve to toggle. Use get_sketch_info() to see available curves.
+        is_construction: True to make construction, False to make regular. Default True.
+    """
+    return send_fusion_command("set_construction", {
+        "curve_index": curve_index,
+        "is_construction": is_construction
+    })
+
+# =============================================================================
 # 3D FEATURE OPERATIONS (ENHANCED)
 # =============================================================================
 

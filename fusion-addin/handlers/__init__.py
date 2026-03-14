@@ -1,6 +1,6 @@
 from .sketch import (
     create_sketch, draw_line, draw_circle, draw_rectangle,
-    draw_arc, draw_polygon, finish_sketch
+    draw_arc, draw_polygon, set_construction, finish_sketch
 )
 from .feature import (
     extrude, revolve, fillet, chamfer, shell, draft,
@@ -30,6 +30,7 @@ HANDLER_MAP = {
     'draw_rectangle': draw_rectangle,
     'draw_arc': draw_arc,
     'draw_polygon': draw_polygon,
+    'set_construction': set_construction,
     'finish_sketch': finish_sketch,
 
     # Feature tools (10)
