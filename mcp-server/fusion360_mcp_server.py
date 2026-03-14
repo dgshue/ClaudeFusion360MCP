@@ -499,7 +499,27 @@ def get_body_info(body_index: int = None) -> dict:
     return send_fusion_command("get_body_info", params)
 
 @mcp.tool()
-def measure(type: str = "body", body_index: int = None, 
+def get_sketch_info() -> dict:
+    """Get detailed information about the active sketch including all curves, points, constraints, and dimensions.
+
+    Returns curves with semantic labels (e.g., "Curve 0 (line, horizontal, 5cm)"),
+    points with coordinates, geometric constraints, parametric dimensions, and
+    overall constraint status.
+
+    This is the primary tool for understanding sketch state before applying
+    constraints, dimensions, or other operations. Similar to get_body_info for 3D bodies.
+
+    Example workflow:
+        1. create_sketch(plane="XY")
+        2. draw_line(...), draw_circle(...)
+        3. get_sketch_info()  # see all entities with indices
+        4. constrain_horizontal(curve_index=0)
+        5. dimension_distance(value=5, curve_index=0)
+    """
+    return send_fusion_command("get_sketch_info", {})
+
+@mcp.tool()
+def measure(type: str = "body", body_index: int = None,
             edge_index: int = None, face_index: int = None) -> dict:
     """
     Measure dimensions of bodies, edges, or faces.

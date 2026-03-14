@@ -31,6 +31,7 @@ from .sketch_constraints import (
 from .sketch_dimensions import (
     dimension_distance, dimension_radial, dimension_angular
 )
+from .sketch_query import get_sketch_info
 
 
 # Dict mapping all 39 tool names (excluding batch, which is handled inline)
@@ -116,4 +117,7 @@ HANDLER_MAP = {
     'dimension_distance': dimension_distance,
     'dimension_radial': dimension_radial,
     'dimension_angular': dimension_angular,
+
+    # Sketch query (Phase 2)
+    'get_sketch_info': get_sketch_info,
 }
