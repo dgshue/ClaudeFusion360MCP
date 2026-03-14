@@ -29,18 +29,18 @@
 
 ### Missing 3D Feature Handlers (Close Gap)
 
-- [ ] **FEAT-01**: `chamfer` handler applies chamfers to selected edges
-- [ ] **FEAT-02**: `shell` handler hollows bodies with selectable faces to remove
-- [ ] **FEAT-03**: `draft` handler applies draft angles to selected faces
-- [ ] **FEAT-04**: `pattern_rectangular` handler creates linear arrays of bodies/features
-- [ ] **FEAT-05**: `pattern_circular` handler creates radial arrays of bodies/features
-- [ ] **FEAT-06**: `mirror` handler mirrors bodies across selected plane
-- [ ] **FEAT-07**: `combine` handler performs boolean operations (cut/join/intersect)
+- [x] **FEAT-01**: `chamfer` handler applies chamfers to selected edges
+- [x] **FEAT-02**: `shell` handler hollows bodies with selectable faces to remove
+- [x] **FEAT-03**: `draft` handler applies draft angles to selected faces
+- [x] **FEAT-04**: `pattern_rectangular` handler creates linear arrays of bodies/features
+- [x] **FEAT-05**: `pattern_circular` handler creates radial arrays of bodies/features
+- [x] **FEAT-06**: `mirror` handler mirrors bodies across selected plane
+- [x] **FEAT-07**: `combine` handler performs boolean operations (cut/join/intersect)
 
 ### Missing Query Handlers (Close Gap)
 
-- [ ] **QUERY-01**: `get_body_info` handler returns detailed body info with edge/face indices
-- [ ] **QUERY-02**: `measure` handler returns volume, surface area, bounding box, edge length, face area
+- [x] **QUERY-01**: `get_body_info` handler returns detailed body info with edge/face indices
+- [x] **QUERY-02**: `measure` handler returns volume, surface area, bounding box, edge length, face area
 
 ### Missing Component Handlers (Close Gap)
 
@@ -180,15 +180,15 @@
 | SKTCH-01 | Phase 1 | Pending |
 | SKTCH-02 | Phase 1 | Pending |
 | SKTCH-03 | Phase 1 | Pending |
-| FEAT-01 | Phase 1 | Pending |
-| FEAT-02 | Phase 1 | Pending |
-| FEAT-03 | Phase 1 | Pending |
-| FEAT-04 | Phase 1 | Pending |
-| FEAT-05 | Phase 1 | Pending |
-| FEAT-06 | Phase 1 | Pending |
-| FEAT-07 | Phase 1 | Pending |
-| QUERY-01 | Phase 1 | Pending |
-| QUERY-02 | Phase 1 | Pending |
+| FEAT-01 | Phase 1 | Complete |
+| FEAT-02 | Phase 1 | Complete |
+| FEAT-03 | Phase 1 | Complete |
+| FEAT-04 | Phase 1 | Complete |
+| FEAT-05 | Phase 1 | Complete |
+| FEAT-06 | Phase 1 | Complete |
+| FEAT-07 | Phase 1 | Complete |
+| QUERY-01 | Phase 1 | Complete |
+| QUERY-02 | Phase 1 | Complete |
 | COMP-01 | Phase 1 | Complete |
 | COMP-02 | Phase 1 | Complete |
 | COMP-03 | Phase 1 | Complete |
