@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 2 context gathered
-last_updated: "2026-03-14T01:14:27.507Z"
-last_activity: 2026-03-14 -- Completed Plan 01-01 (Infrastructure Foundation)
+stopped_at: Completed 02-01-PLAN.md
+last_updated: "2026-03-14T01:43:00.000Z"
+last_activity: 2026-03-14 -- Completed Plan 02-01 (Sketch Entity Indexing)
 progress:
   total_phases: 5
   completed_phases: 1
-  total_plans: 5
-  completed_plans: 5
+  total_plans: 9
+  completed_plans: 6
   percent: 20
 ---
 
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-13)
 
 **Core value:** Every MCP tool must work end-to-end with no "Unknown tool" dead ends
-**Current focus:** Phase 1 - Foundation and Gap Closure
+**Current focus:** Phase 2 - Sketch Completeness
 
 ## Current Position
 
-Phase: 1 of 5 (Foundation and Gap Closure)
-Plan: 1 of 5 in current phase
+Phase: 2 of 5 (Sketch Completeness)
+Plan: 1 of 4 in current phase
 Status: Executing
-Last activity: 2026-03-14 -- Completed Plan 01-01 (Infrastructure Foundation)
+Last activity: 2026-03-14 -- Completed Plan 02-01 (Sketch Entity Indexing)
 
-Progress: [##........] 20%
+Progress: [███████░░░] 67%
 
 ## Performance Metrics
 
@@ -55,6 +55,7 @@ Progress: [##........] 20%
 | Phase 01 P05 | 1min | 2 tasks | 3 files |
 | Phase 01 P04 | 2min | 2 tasks | 2 files |
 | Phase 01 P03 | 3min | 2 tasks | 2 files |
+| Phase 02 P01 | 2min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -79,6 +80,8 @@ Recent decisions affecting current work:
 - [Phase 01-02]: draw_arc uses center/start/end with computed sweep angle matching MCP declaration
 - [Phase 01-02]: detect_sketch_plane checks FusionMCP attribute first for offset plane support
 - [Phase 01-02]: extrude profile_index defaults to 0 for predictable behavior
+- [Phase 02-01]: Object reference comparison for curve/point index lookups via iteration
+- [Phase 02-01]: Rectangle handler deduplicates shared corner points using seen set
 
 ### Pending Todos
 
@@ -91,6 +94,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-14T01:14:27.495Z
-Stopped at: Phase 2 context gathered
-Resume file: .planning/phases/02-sketch-completeness/02-CONTEXT.md
+Last session: 2026-03-14T01:43:00.000Z
+Stopped at: Completed 02-01-PLAN.md
+Resume file: .planning/phases/02-sketch-completeness/02-01-SUMMARY.md
