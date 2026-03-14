@@ -30,12 +30,14 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. User can create a sketch on the XZ plane and all coordinates match world-space expectations (no surprise Y-axis inversions)
   4. User can query body geometry and select specific edges/faces for operations like fillet and chamfer by semantic description (top face, longest edge) rather than fragile indices
   5. User can export designs to STL, STEP, and 3MF formats and import mesh files
-**Plans**: TBD
+**Plans**: 5 plans
 
 Plans:
-- [ ] 01-01: TBD
-- [ ] 01-02: TBD
-- [ ] 01-03: TBD
+- [ ] 01-01-PLAN.md -- Infrastructure: CustomEvent threading, dict dispatch, error handling, coordinate correction, semantic selection helpers
+- [ ] 01-02-PLAN.md -- Bug fixes (5 existing handlers) + 3 new sketch handlers (draw_line, draw_arc, draw_polygon)
+- [ ] 01-03-PLAN.md -- 7 feature handlers (chamfer, shell, draft, patterns, mirror, combine) + 2 query handlers (get_body_info, measure)
+- [ ] 01-04-PLAN.md -- 6 component handlers + 4 joint handlers
+- [ ] 01-05-PLAN.md -- 3 utility handlers (undo, delete_body, delete_sketch) + 4 I/O handlers (export/import)
 
 ### Phase 2: Sketch Completeness
 **Goal**: Users have a complete sketch toolkit enabling complex profiles for advanced 3D features like sweep paths, loft sections, and precise parametric geometry
@@ -101,7 +103,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation and Gap Closure | 0/3 | Not started | - |
+| 1. Foundation and Gap Closure | 0/5 | Planning complete | - |
 | 2. Sketch Completeness | 0/2 | Not started | - |
 | 3. Advanced 3D Features | 0/1 | Not started | - |
 | 4. Assembly Enhancement | 0/1 | Not started | - |
