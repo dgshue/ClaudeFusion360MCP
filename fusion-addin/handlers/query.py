@@ -1,6 +1,15 @@
 import adsk.core
 import adsk.fusion
 
+import os
+import sys
+_addin_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _addin_dir not in sys.path:
+    sys.path.insert(0, _addin_dir)
+
+from helpers.bodies import get_body
+from helpers.selection import label_edge, label_face
+
 
 def get_design_info(design, rootComp, params):
     active_sketch = None
@@ -24,38 +33,40 @@ def get_design_info(design, rootComp, params):
 
 
 def get_body_info(design, rootComp, params):
-    if rootComp.bRepBodies.count == 0:
-        return {"success": False, "error": "No bodies in design. Create geometry first."}
-
-    body_index = params.get('body_index', rootComp.bRepBodies.count - 1)
-    if body_index < 0 or body_index >= rootComp.bRepBodies.count:
-        return {
-            "success": False,
-            "error": f"Body index {body_index} out of range. Design has {rootComp.bRepBodies.count} bodies (0-{rootComp.bRepBodies.count - 1})."
-        }
-    body = rootComp.bRepBodies.item(body_index)
+    body = get_body(rootComp, params.get('body_index'))
 
     edges_info = []
     for i in range(body.edges.count):
         edge = body.edges.item(i)
-        edge_info = {
-            "index": i,
-            "length": round(edge.length, 4)
-        }
+        label = label_edge(edge, i, body)
+
+        # Determine edge geometry type
+        edge_type = "linear"
         try:
-            mp = edge.pointOnEdge
-            edge_info["midpoint"] = {
-                "x": round(mp.x, 4),
-                "y": round(mp.y, 4),
-                "z": round(mp.z, 4)
-            }
+            geom = edge.geometry
+            if isinstance(geom, adsk.core.Circle3D) or isinstance(geom, adsk.core.Arc3D):
+                edge_type = "circular"
+            elif isinstance(geom, adsk.core.Line3D):
+                edge_type = "linear"
+            elif isinstance(geom, adsk.core.Ellipse3D) or isinstance(geom, adsk.core.EllipticalArc3D):
+                edge_type = "elliptical"
+            elif isinstance(geom, adsk.core.NurbsCurve3D):
+                edge_type = "nurbs"
         except Exception:
             pass
-        edges_info.append(edge_info)
+
+        edges_info.append({
+            "index": i,
+            "label": label,
+            "length_cm": round(edge.length, 4),
+            "type": edge_type
+        })
 
     faces_info = []
     for i in range(body.faces.count):
         face = body.faces.item(i)
+        label = label_face(face, i, body)
+
         face_type = "unknown"
         try:
             geom = face.geometry
@@ -72,21 +83,12 @@ def get_body_info(design, rootComp, params):
         except Exception:
             pass
 
-        face_info = {
+        faces_info.append({
             "index": i,
-            "type": face_type,
-            "area": round(face.area, 4)
-        }
-        try:
-            centroid = face.centroid
-            face_info["centroid"] = {
-                "x": round(centroid.x, 4),
-                "y": round(centroid.y, 4),
-                "z": round(centroid.z, 4)
-            }
-        except Exception:
-            pass
-        faces_info.append(face_info)
+            "label": label,
+            "area_cm2": round(face.area, 4),
+            "type": face_type
+        })
 
     bbox = body.boundingBox
     return {
@@ -94,35 +96,35 @@ def get_body_info(design, rootComp, params):
         "body_name": body.name,
         "edge_count": body.edges.count,
         "face_count": body.faces.count,
-        "bounding_box": {
-            "min": {"x": round(bbox.minPoint.x, 4), "y": round(bbox.minPoint.y, 4), "z": round(bbox.minPoint.z, 4)},
-            "max": {"x": round(bbox.maxPoint.x, 4), "y": round(bbox.maxPoint.y, 4), "z": round(bbox.maxPoint.z, 4)}
-        },
         "edges": edges_info,
-        "faces": faces_info
+        "faces": faces_info,
+        "bounding_box": {
+            "min": [round(bbox.minPoint.x, 4), round(bbox.minPoint.y, 4), round(bbox.minPoint.z, 4)],
+            "max": [round(bbox.maxPoint.x, 4), round(bbox.maxPoint.y, 4), round(bbox.maxPoint.z, 4)]
+        }
     }
 
 
 def measure(design, rootComp, params):
     measure_type = params.get('type', 'body')
+    body = get_body(rootComp, params.get('body_index'))
 
     if measure_type == 'body':
-        if rootComp.bRepBodies.count == 0:
-            return {"success": False, "error": "No bodies in design."}
-
-        body_index = params.get('body_index', rootComp.bRepBodies.count - 1)
-        body = rootComp.bRepBodies.item(body_index)
-
         props = body.physicalProperties
         bbox = body.boundingBox
         return {
             "success": True,
             "body_name": body.name,
-            "volume": round(props.volume, 6),
-            "area": round(props.area, 4),
+            "volume_cm3": round(props.volume, 6),
+            "surface_area_cm2": round(props.area, 4),
             "bounding_box": {
-                "min": {"x": round(bbox.minPoint.x, 4), "y": round(bbox.minPoint.y, 4), "z": round(bbox.minPoint.z, 4)},
-                "max": {"x": round(bbox.maxPoint.x, 4), "y": round(bbox.maxPoint.y, 4), "z": round(bbox.maxPoint.z, 4)}
+                "min": [round(bbox.minPoint.x, 4), round(bbox.minPoint.y, 4), round(bbox.minPoint.z, 4)],
+                "max": [round(bbox.maxPoint.x, 4), round(bbox.maxPoint.y, 4), round(bbox.maxPoint.z, 4)],
+                "size": [
+                    round(bbox.maxPoint.x - bbox.minPoint.x, 4),
+                    round(bbox.maxPoint.y - bbox.minPoint.y, 4),
+                    round(bbox.maxPoint.z - bbox.minPoint.z, 4)
+                ]
             },
             "center_of_mass": {
                 "x": round(props.centerOfMass.x, 4),
@@ -132,33 +134,32 @@ def measure(design, rootComp, params):
         }
 
     elif measure_type == 'edge':
-        if rootComp.bRepBodies.count == 0:
-            return {"success": False, "error": "No bodies in design."}
-        body_index = params.get('body_index', rootComp.bRepBodies.count - 1)
-        body = rootComp.bRepBodies.item(body_index)
         edge_index = params.get('edge_index', 0)
-        if edge_index >= body.edges.count:
-            return {"success": False, "error": f"Edge index {edge_index} out of range. Body has {body.edges.count} edges."}
+        if edge_index < 0 or edge_index >= body.edges.count:
+            raise ValueError(
+                f"Edge index {edge_index} out of range. Body has {body.edges.count} edges (0-{body.edges.count - 1}). "
+                f"Use get_body_info() to see available edges."
+            )
         edge = body.edges.item(edge_index)
         return {
             "success": True,
             "edge_index": edge_index,
-            "length": round(edge.length, 4)
+            "length_cm": round(edge.length, 4)
         }
 
     elif measure_type == 'face':
-        if rootComp.bRepBodies.count == 0:
-            return {"success": False, "error": "No bodies in design."}
-        body_index = params.get('body_index', rootComp.bRepBodies.count - 1)
-        body = rootComp.bRepBodies.item(body_index)
         face_index = params.get('face_index', 0)
-        if face_index >= body.faces.count:
-            return {"success": False, "error": f"Face index {face_index} out of range. Body has {body.faces.count} faces."}
+        if face_index < 0 or face_index >= body.faces.count:
+            raise ValueError(
+                f"Face index {face_index} out of range. Body has {body.faces.count} faces (0-{body.faces.count - 1}). "
+                f"Use get_body_info() to see available faces."
+            )
         face = body.faces.item(face_index)
         return {
             "success": True,
             "face_index": face_index,
-            "area": round(face.area, 4)
+            "area_cm2": round(face.area, 4)
         }
 
-    return {"success": False, "error": f"Unknown measure type '{measure_type}'. Use 'body', 'edge', or 'face'."}
+    else:
+        raise ValueError(f"Unknown measure type: {measure_type}. Use 'body', 'edge', or 'face'.")
