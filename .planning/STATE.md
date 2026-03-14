@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-01-PLAN.md
-last_updated: "2026-03-14T00:26:38.543Z"
+stopped_at: Completed 01-05-PLAN.md
+last_updated: "2026-03-14T00:29:53.287Z"
 last_activity: 2026-03-14 -- Completed Plan 01-01 (Infrastructure Foundation)
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 5
-  completed_plans: 1
+  completed_plans: 2
   percent: 20
 ---
 
@@ -51,6 +51,7 @@ Progress: [##........] 20%
 
 *Updated after each plan completion*
 | Phase 01 P01 | 6min | 2 tasks | 14 files |
+| Phase 01 P05 | 1min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -65,6 +66,9 @@ Recent decisions affecting current work:
 - Batch command stops on first error, returns partial results (01-01)
 - sys.path.insert for sub-package imports in Fusion embedded Python (01-01)
 - All 29 missing handlers implemented with real API logic, not stubs (01-01)
+- [Phase 01]: undo uses try/except per iteration for accurate count reporting
+- [Phase 01]: delete_body/delete_sketch delegate to shared helpers for consistency
+- [Phase 01]: export_3mf uses two-stage fallback with clear error on unsupported versions
 
 ### Pending Todos
 
@@ -77,6 +81,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-14T00:26:38.540Z
-Stopped at: Completed 01-01-PLAN.md
+Last session: 2026-03-14T00:29:53.282Z
+Stopped at: Completed 01-05-PLAN.md
 Resume file: None

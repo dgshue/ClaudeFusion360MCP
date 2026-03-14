@@ -60,16 +60,16 @@
 
 ### Missing Utility Handlers (Close Gap)
 
-- [ ] **UTIL-01**: `undo` handler undoes specified number of operations
-- [ ] **UTIL-02**: `delete_body` handler removes bodies from design
-- [ ] **UTIL-03**: `delete_sketch` handler removes sketches from design
+- [x] **UTIL-01**: `undo` handler undoes specified number of operations
+- [x] **UTIL-02**: `delete_body` handler removes bodies from design
+- [x] **UTIL-03**: `delete_sketch` handler removes sketches from design
 
 ### Missing Export/Import Handlers (Close Gap)
 
-- [ ] **IO-01**: `export_stl` handler exports bodies to STL format
-- [ ] **IO-02**: `export_step` handler exports bodies to STEP format
-- [ ] **IO-03**: `export_3mf` handler exports bodies to 3MF format
-- [ ] **IO-04**: `import_mesh` handler imports STL/OBJ/3MF mesh files
+- [x] **IO-01**: `export_stl` handler exports bodies to STL format
+- [x] **IO-02**: `export_step` handler exports bodies to STEP format
+- [x] **IO-03**: `export_3mf` handler exports bodies to 3MF format
+- [x] **IO-04**: `import_mesh` handler imports STL/OBJ/3MF mesh files
 
 ### New Sketch Primitives
 
@@ -199,13 +199,13 @@
 | JOINT-02 | Phase 1 | Pending |
 | JOINT-03 | Phase 1 | Pending |
 | JOINT-04 | Phase 1 | Pending |
-| UTIL-01 | Phase 1 | Pending |
-| UTIL-02 | Phase 1 | Pending |
-| UTIL-03 | Phase 1 | Pending |
-| IO-01 | Phase 1 | Pending |
-| IO-02 | Phase 1 | Pending |
-| IO-03 | Phase 1 | Pending |
-| IO-04 | Phase 1 | Pending |
+| UTIL-01 | Phase 1 | Complete |
+| UTIL-02 | Phase 1 | Complete |
+| UTIL-03 | Phase 1 | Complete |
+| IO-01 | Phase 1 | Complete |
+| IO-02 | Phase 1 | Complete |
+| IO-03 | Phase 1 | Complete |
+| IO-04 | Phase 1 | Complete |
 | NSKCH-01 | Phase 2 | Pending |
 | NSKCH-02 | Phase 2 | Pending |
 | NSKCH-03 | Phase 2 | Pending |
