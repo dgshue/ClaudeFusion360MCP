@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-03-PLAN.md
-last_updated: "2026-03-14T00:31:48.781Z"
+stopped_at: Completed 01-02-PLAN.md
+last_updated: "2026-03-14T00:32:28.582Z"
 last_activity: 2026-03-14 -- Completed Plan 01-01 (Infrastructure Foundation)
 progress:
   total_phases: 5
@@ -51,6 +51,7 @@ Progress: [##........] 20%
 
 *Updated after each plan completion*
 | Phase 01 P01 | 6min | 2 tasks | 14 files |
+| Phase 01 P02 | 3min | 2 tasks | 6 files |
 | Phase 01 P05 | 1min | 2 tasks | 3 files |
 | Phase 01 P04 | 2min | 2 tasks | 2 files |
 | Phase 01 P03 | 3min | 2 tasks | 2 files |
@@ -75,6 +76,9 @@ Recent decisions affecting current work:
 - [Phase 01]: check_interference operates on occurrences not root bodies for assembly correctness
 - [Phase 01]: chamfer uses createInput2 with AttributeError fallback for API version compatibility
 - [Phase 01]: get_body_info returns semantic labels alongside structured data for AI caller flexibility
+- [Phase 01-02]: draw_arc uses center/start/end with computed sweep angle matching MCP declaration
+- [Phase 01-02]: detect_sketch_plane checks FusionMCP attribute first for offset plane support
+- [Phase 01-02]: extrude profile_index defaults to 0 for predictable behavior
 
 ### Pending Todos
 
@@ -87,6 +91,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-14T00:31:48.777Z
-Stopped at: Completed 01-03-PLAN.md
+Last session: 2026-03-14T00:32:28.579Z
+Stopped at: Completed 01-02-PLAN.md
 Resume file: None

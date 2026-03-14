@@ -15,17 +15,17 @@
 
 ### Bug Fixes (Existing Handlers)
 
-- [ ] **FIX-01**: `fillet` handler respects `edges` parameter for selective edge filleting
-- [ ] **FIX-02**: `extrude` handler respects `profile_index` and `taper_angle` parameters
-- [ ] **FIX-03**: `revolve` handler supports configurable axis selection (not hardcoded Y)
-- [ ] **FIX-04**: `create_sketch` handler respects `offset` parameter for offset sketch planes
-- [ ] **FIX-05**: `get_design_info` handler returns component count
+- [x] **FIX-01**: `fillet` handler respects `edges` parameter for selective edge filleting
+- [x] **FIX-02**: `extrude` handler respects `profile_index` and `taper_angle` parameters
+- [x] **FIX-03**: `revolve` handler supports configurable axis selection (not hardcoded Y)
+- [x] **FIX-04**: `create_sketch` handler respects `offset` parameter for offset sketch planes
+- [x] **FIX-05**: `get_design_info` handler returns component count
 
 ### Missing Sketch Handlers (Close Gap)
 
-- [ ] **SKTCH-01**: `draw_line` handler draws lines between two points in active sketch
-- [ ] **SKTCH-02**: `draw_arc` handler draws arcs by center/start/end points
-- [ ] **SKTCH-03**: `draw_polygon` handler draws regular polygons by center/radius/sides
+- [x] **SKTCH-01**: `draw_line` handler draws lines between two points in active sketch
+- [x] **SKTCH-02**: `draw_arc` handler draws arcs by center/start/end points
+- [x] **SKTCH-03**: `draw_polygon` handler draws regular polygons by center/radius/sides
 
 ### Missing 3D Feature Handlers (Close Gap)
 
@@ -172,14 +172,14 @@
 | INFRA-03 | Phase 1 | Complete |
 | INFRA-04 | Phase 1 | Complete |
 | INFRA-05 | Phase 1 | Complete |
-| FIX-01 | Phase 1 | Pending |
-| FIX-02 | Phase 1 | Pending |
-| FIX-03 | Phase 1 | Pending |
-| FIX-04 | Phase 1 | Pending |
-| FIX-05 | Phase 1 | Pending |
-| SKTCH-01 | Phase 1 | Pending |
-| SKTCH-02 | Phase 1 | Pending |
-| SKTCH-03 | Phase 1 | Pending |
+| FIX-01 | Phase 1 | Complete |
+| FIX-02 | Phase 1 | Complete |
+| FIX-03 | Phase 1 | Complete |
+| FIX-04 | Phase 1 | Complete |
+| FIX-05 | Phase 1 | Complete |
+| SKTCH-01 | Phase 1 | Complete |
+| SKTCH-02 | Phase 1 | Complete |
+| SKTCH-03 | Phase 1 | Complete |
 | FEAT-01 | Phase 1 | Complete |
 | FEAT-02 | Phase 1 | Complete |
 | FEAT-03 | Phase 1 | Complete |
