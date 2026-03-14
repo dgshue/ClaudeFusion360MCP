@@ -7,11 +7,11 @@
 
 ### Foundation & Infrastructure
 
-- [ ] **INFRA-01**: Add-in uses CustomEvent pattern so all Fusion API calls execute on main thread (no threading violations)
-- [ ] **INFRA-02**: All bare `except: pass` blocks replaced with proper error propagation that returns actionable error messages
-- [ ] **INFRA-03**: Add-in restructured into domain handler modules (sketch, feature, assembly, query, utility) with dict-based dispatch
-- [ ] **INFRA-04**: Coordinate transformation layer handles XZ plane Y-axis inversion transparently
-- [ ] **INFRA-05**: Face/edge semantic selection helpers identify geometry by position/properties rather than fragile indices
+- [x] **INFRA-01**: Add-in uses CustomEvent pattern so all Fusion API calls execute on main thread (no threading violations)
+- [x] **INFRA-02**: All bare `except: pass` blocks replaced with proper error propagation that returns actionable error messages
+- [x] **INFRA-03**: Add-in restructured into domain handler modules (sketch, feature, assembly, query, utility) with dict-based dispatch
+- [x] **INFRA-04**: Coordinate transformation layer handles XZ plane Y-axis inversion transparently
+- [x] **INFRA-05**: Face/edge semantic selection helpers identify geometry by position/properties rather than fragile indices
 
 ### Bug Fixes (Existing Handlers)
 
@@ -167,11 +167,11 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INFRA-01 | Phase 1 | Pending |
-| INFRA-02 | Phase 1 | Pending |
-| INFRA-03 | Phase 1 | Pending |
-| INFRA-04 | Phase 1 | Pending |
-| INFRA-05 | Phase 1 | Pending |
+| INFRA-01 | Phase 1 | Complete |
+| INFRA-02 | Phase 1 | Complete |
+| INFRA-03 | Phase 1 | Complete |
+| INFRA-04 | Phase 1 | Complete |
+| INFRA-05 | Phase 1 | Complete |
 | FIX-01 | Phase 1 | Pending |
 | FIX-02 | Phase 1 | Pending |
 | FIX-03 | Phase 1 | Pending |
