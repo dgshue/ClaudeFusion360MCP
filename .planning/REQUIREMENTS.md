@@ -73,15 +73,15 @@
 
 ### New Sketch Primitives
 
-- [ ] **NSKCH-01**: `draw_spline` tool and handler for fitted splines through point collections
-- [ ] **NSKCH-02**: `draw_ellipse` tool and handler for ellipses
-- [ ] **NSKCH-03**: `draw_slot` tool and handler for center-point and overall slots
-- [ ] **NSKCH-04**: `draw_point` tool and handler for reference/construction points
-- [ ] **NSKCH-05**: `offset_curves` tool and handler for parallel profiles at uniform distance
-- [ ] **NSKCH-06**: `draw_text` tool and handler for sketch text (extrudable for embossing)
+- [x] **NSKCH-01**: `draw_spline` tool and handler for fitted splines through point collections
+- [x] **NSKCH-02**: `draw_ellipse` tool and handler for ellipses
+- [x] **NSKCH-03**: `draw_slot` tool and handler for center-point and overall slots
+- [x] **NSKCH-04**: `draw_point` tool and handler for reference/construction points
+- [x] **NSKCH-05**: `offset_curves` tool and handler for parallel profiles at uniform distance
+- [x] **NSKCH-06**: `draw_text` tool and handler for sketch text (extrudable for embossing)
 - [x] **NSKCH-07**: `set_construction` tool and handler to toggle entities to construction geometry
-- [ ] **NSKCH-08**: `project_geometry` tool and handler to project edges/faces onto sketch plane
-- [ ] **NSKCH-09**: `import_svg` tool and handler for vector art import into sketches
+- [x] **NSKCH-08**: `project_geometry` tool and handler to project edges/faces onto sketch plane
+- [x] **NSKCH-09**: `import_svg` tool and handler for vector art import into sketches
 
 ### Sketch Constraints
 
@@ -206,15 +206,15 @@
 | IO-02 | Phase 1 | Complete |
 | IO-03 | Phase 1 | Complete |
 | IO-04 | Phase 1 | Complete |
-| NSKCH-01 | Phase 2 | Pending |
-| NSKCH-02 | Phase 2 | Pending |
-| NSKCH-03 | Phase 2 | Pending |
-| NSKCH-04 | Phase 2 | Pending |
-| NSKCH-05 | Phase 2 | Pending |
-| NSKCH-06 | Phase 2 | Pending |
+| NSKCH-01 | Phase 2 | Complete |
+| NSKCH-02 | Phase 2 | Complete |
+| NSKCH-03 | Phase 2 | Complete |
+| NSKCH-04 | Phase 2 | Complete |
+| NSKCH-05 | Phase 2 | Complete |
+| NSKCH-06 | Phase 2 | Complete |
 | NSKCH-07 | Phase 2 | Complete |
-| NSKCH-08 | Phase 2 | Pending |
-| NSKCH-09 | Phase 2 | Pending |
+| NSKCH-08 | Phase 2 | Complete |
+| NSKCH-09 | Phase 2 | Complete |
 | CNST-01 | Phase 2 | Pending |
 | CNST-02 | Phase 2 | Pending |
 | CNST-03 | Phase 2 | Pending |
