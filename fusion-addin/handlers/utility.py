@@ -1,48 +1,48 @@
 import adsk.core
 import adsk.fusion
 
+import os
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__))))
+from helpers.bodies import get_body, get_sketch
+
 
 def undo(design, rootComp, params):
+    """Undo the specified number of operations.
+
+    Uses the undocumented but community-standard executeTextCommand approach.
+    Each call undoes one operation. Stops early if nothing left to undo.
+    """
     app = adsk.core.Application.get()
     count = params.get('count', 1)
-    for _ in range(count):
-        app.executeTextCommand("Commands.Undo")
-    return {"success": True, "undo_count": count}
+    undone = 0
+    for i in range(count):
+        try:
+            app.executeTextCommand("Commands.Undo")
+            undone += 1
+        except:
+            break  # No more operations to undo
+    return {"success": True, "undone_count": undone, "requested_count": count}
 
 
 def delete_body(design, rootComp, params):
-    if rootComp.bRepBodies.count == 0:
-        return {"success": False, "error": "No bodies in design."}
-
-    body_index = params.get('body_index', rootComp.bRepBodies.count - 1)
-    if body_index < 0 or body_index >= rootComp.bRepBodies.count:
-        return {
-            "success": False,
-            "error": f"Body index {body_index} out of range. Design has {rootComp.bRepBodies.count} bodies (0-{rootComp.bRepBodies.count - 1})."
-        }
-    body = rootComp.bRepBodies.item(body_index)
+    """Delete a body by index. Uses get_body helper for validation."""
+    body = get_body(rootComp, params.get('body_index'))
     body_name = body.name
     body.deleteMe()
-    return {"success": True, "deleted": body_name}
+    return {"success": True, "deleted_body": body_name}
 
 
 def delete_sketch(design, rootComp, params):
-    if rootComp.sketches.count == 0:
-        return {"success": False, "error": "No sketches in design."}
-
-    sketch_index = params.get('sketch_index', rootComp.sketches.count - 1)
-    if sketch_index < 0 or sketch_index >= rootComp.sketches.count:
-        return {
-            "success": False,
-            "error": f"Sketch index {sketch_index} out of range. Design has {rootComp.sketches.count} sketches (0-{rootComp.sketches.count - 1})."
-        }
-    sketch = rootComp.sketches.item(sketch_index)
+    """Delete a sketch by index. Uses get_sketch helper for validation."""
+    sketch = get_sketch(rootComp, params.get('sketch_index'))
     sketch_name = sketch.name
     sketch.deleteMe()
-    return {"success": True, "deleted": sketch_name}
+    return {"success": True, "deleted_sketch": sketch_name}
 
 
 def fit_view(design, rootComp, params):
+    """Fit the active viewport to show all geometry."""
     app = adsk.core.Application.get()
     app.activeViewport.fit()
     return {"success": True}
