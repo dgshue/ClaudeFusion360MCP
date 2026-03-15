@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 1: Foundation and Gap Closure** - Fix threading, error handling, and coordinate bugs; restructure add-in; implement all 30 missing handlers for declared tools
 - [ ] **Phase 2: Sketch Completeness** - Add new sketch primitives, geometric constraints, and sketch dimensions for full sketch API coverage
-- [ ] **Phase 3: Advanced 3D Features** - Add sweep, loft, hole, thread, and construction geometry tools
+- [x] **Phase 3: Advanced 3D Features** - Add sweep, loft, hole, thread, and construction geometry tools (completed 2026-03-15)
 - [ ] **Phase 4: Assembly Enhancement** - Add remaining joint types and sketch-on-face capability
 - [ ] **Phase 5: Parametric, Timeline, and Discoverability** - Add parametric design, timeline manipulation, MCP resources, prompts, and rich tool docs
 
@@ -109,6 +109,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 |-------|----------------|--------|-----------|
 | 1. Foundation and Gap Closure | 5/5 | Complete |  |
 | 2. Sketch Completeness | 3/4 | In Progress|  |
-| 3. Advanced 3D Features | 0/3 | Not started | - |
+| 3. Advanced 3D Features | 3/3 | Complete   | 2026-03-15 |
 | 4. Assembly Enhancement | 0/1 | Not started | - |
 | 5. Parametric, Timeline, and Discoverability | 0/1 | Not started | - |

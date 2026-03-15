@@ -105,8 +105,8 @@
 
 - [x] **NFEAT-01**: `sweep` tool and handler for extruding profiles along paths
 - [x] **NFEAT-02**: `loft` tool and handler for blending between 2+ profiles
-- [ ] **NFEAT-03**: `hole` tool and handler for standard/counterbore/countersink holes
-- [ ] **NFEAT-04**: `thread` tool and handler for applying threads to cylindrical faces
+- [x] **NFEAT-03**: `hole` tool and handler for standard/counterbore/countersink holes
+- [x] **NFEAT-04**: `thread` tool and handler for applying threads to cylindrical faces
 - [x] **NFEAT-05**: `construction_plane` tool and handler for offset/angled reference planes
 - [x] **NFEAT-06**: `construction_axis` tool and handler for reference axes
 - [x] **NFEAT-07**: `construction_point` tool and handler for reference points
@@ -229,8 +229,8 @@
 | DIM-03 | Phase 2 | Complete |
 | NFEAT-01 | Phase 3 | Complete |
 | NFEAT-02 | Phase 3 | Complete |
-| NFEAT-03 | Phase 3 | Pending |
-| NFEAT-04 | Phase 3 | Pending |
+| NFEAT-03 | Phase 3 | Complete |
+| NFEAT-04 | Phase 3 | Complete |
 | NFEAT-05 | Phase 3 | Complete |
 | NFEAT-06 | Phase 3 | Complete |
 | NFEAT-07 | Phase 3 | Complete |
