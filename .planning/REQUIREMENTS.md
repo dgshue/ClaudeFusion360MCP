@@ -107,9 +107,9 @@
 - [ ] **NFEAT-02**: `loft` tool and handler for blending between 2+ profiles
 - [ ] **NFEAT-03**: `hole` tool and handler for standard/counterbore/countersink holes
 - [ ] **NFEAT-04**: `thread` tool and handler for applying threads to cylindrical faces
-- [ ] **NFEAT-05**: `construction_plane` tool and handler for offset/angled reference planes
-- [ ] **NFEAT-06**: `construction_axis` tool and handler for reference axes
-- [ ] **NFEAT-07**: `construction_point` tool and handler for reference points
+- [x] **NFEAT-05**: `construction_plane` tool and handler for offset/angled reference planes
+- [x] **NFEAT-06**: `construction_axis` tool and handler for reference axes
+- [x] **NFEAT-07**: `construction_point` tool and handler for reference points
 
 ### Assembly Enhancement
 
@@ -231,9 +231,9 @@
 | NFEAT-02 | Phase 3 | Pending |
 | NFEAT-03 | Phase 3 | Pending |
 | NFEAT-04 | Phase 3 | Pending |
-| NFEAT-05 | Phase 3 | Pending |
-| NFEAT-06 | Phase 3 | Pending |
-| NFEAT-07 | Phase 3 | Pending |
+| NFEAT-05 | Phase 3 | Complete |
+| NFEAT-06 | Phase 3 | Complete |
+| NFEAT-07 | Phase 3 | Complete |
 | ASSM-01 | Phase 4 | Pending |
 | ASSM-02 | Phase 4 | Pending |
 | ASSM-03 | Phase 4 | Pending |
