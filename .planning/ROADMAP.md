@@ -66,10 +66,12 @@ Plans:
   2. User can loft between two or more sketch profiles to create smooth transitions between cross-sections
   3. User can create standard, counterbore, and countersink holes with correct dimensions, and apply threads to cylindrical faces
   4. User can create offset and angled construction planes, reference axes, and reference points for use in subsequent sketch and feature operations
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 03-01: TBD
+- [ ] 03-01-PLAN.md -- Construction geometry: offset/angled planes, reference axes, reference points
+- [ ] 03-02-PLAN.md -- Sweep and loft profile-based 3D features
+- [ ] 03-03-PLAN.md -- Hole (simple/counterbore/countersink) and thread manufacturing features
 
 ### Phase 4: Assembly Enhancement
 **Goal**: Users can build multi-component assemblies with the full range of mechanical joint types for articulated and constrained designs
@@ -107,6 +109,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 |-------|----------------|--------|-----------|
 | 1. Foundation and Gap Closure | 5/5 | Complete |  |
 | 2. Sketch Completeness | 3/4 | In Progress|  |
-| 3. Advanced 3D Features | 0/1 | Not started | - |
+| 3. Advanced 3D Features | 0/3 | Not started | - |
 | 4. Assembly Enhancement | 0/1 | Not started | - |
 | 5. Parametric, Timeline, and Discoverability | 0/1 | Not started | - |
