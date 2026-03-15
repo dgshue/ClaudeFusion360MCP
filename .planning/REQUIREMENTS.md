@@ -103,8 +103,8 @@
 
 ### New 3D Features
 
-- [ ] **NFEAT-01**: `sweep` tool and handler for extruding profiles along paths
-- [ ] **NFEAT-02**: `loft` tool and handler for blending between 2+ profiles
+- [x] **NFEAT-01**: `sweep` tool and handler for extruding profiles along paths
+- [x] **NFEAT-02**: `loft` tool and handler for blending between 2+ profiles
 - [ ] **NFEAT-03**: `hole` tool and handler for standard/counterbore/countersink holes
 - [ ] **NFEAT-04**: `thread` tool and handler for applying threads to cylindrical faces
 - [x] **NFEAT-05**: `construction_plane` tool and handler for offset/angled reference planes
@@ -227,8 +227,8 @@
 | DIM-01 | Phase 2 | Complete |
 | DIM-02 | Phase 2 | Complete |
 | DIM-03 | Phase 2 | Complete |
-| NFEAT-01 | Phase 3 | Pending |
-| NFEAT-02 | Phase 3 | Pending |
+| NFEAT-01 | Phase 3 | Complete |
+| NFEAT-02 | Phase 3 | Complete |
 | NFEAT-03 | Phase 3 | Pending |
 | NFEAT-04 | Phase 3 | Pending |
 | NFEAT-05 | Phase 3 | Complete |
