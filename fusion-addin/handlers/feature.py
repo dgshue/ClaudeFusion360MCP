@@ -293,3 +293,97 @@ def combine(design, rootComp, params):
     combine_input.isKeepToolBodies = params.get('keep_tools', False)
     combine_feat = combine_feats.add(combine_input)
     return {"success": True, "feature_name": combine_feat.name}
+
+
+def sweep(design, rootComp, params):
+    if rootComp.sketches.count < 2:
+        return {"success": False, "error": "Sweep requires at least 2 sketches: one for the profile and one for the path"}
+
+    profile_sketch_index = params.get('profile_sketch_index', rootComp.sketches.count - 2)
+    path_sketch_index = params.get('path_sketch_index', rootComp.sketches.count - 1)
+
+    if profile_sketch_index == path_sketch_index:
+        return {"success": False, "error": "Profile and path must be in different sketches"}
+
+    profile_sketch = rootComp.sketches.item(profile_sketch_index)
+    profile_index = params.get('profile_index', 0)
+    if profile_sketch.profiles.count == 0:
+        return {"success": False, "error": "No profiles in profile sketch. Draw closed geometry before sweeping."}
+    if profile_index < 0 or profile_index >= profile_sketch.profiles.count:
+        return {"success": False, "error": f"Profile index {profile_index} out of range. Sketch has {profile_sketch.profiles.count} profiles (0-{profile_sketch.profiles.count - 1})."}
+    profile = profile_sketch.profiles.item(profile_index)
+
+    path_sketch = rootComp.sketches.item(path_sketch_index)
+    path_curve_index = params.get('path_curve_index', 0)
+    if path_curve_index < 0 or path_curve_index >= path_sketch.sketchCurves.count:
+        return {"success": False, "error": f"Path curve index {path_curve_index} out of range. Path sketch has {path_sketch.sketchCurves.count} curves (0-{path_sketch.sketchCurves.count - 1})."}
+    path_curve = path_sketch.sketchCurves.item(path_curve_index)
+    path = rootComp.features.createPath(path_curve)
+
+    op_map = {
+        'new': adsk.fusion.FeatureOperations.NewBodyFeatureOperation,
+        'join': adsk.fusion.FeatureOperations.JoinFeatureOperation,
+        'cut': adsk.fusion.FeatureOperations.CutFeatureOperation,
+        'intersect': adsk.fusion.FeatureOperations.IntersectFeatureOperation,
+    }
+    operation = params.get('operation', 'new')
+    if operation not in op_map:
+        return {"success": False, "error": f"Unknown operation '{operation}'. Use 'new', 'join', 'cut', or 'intersect'."}
+
+    sweeps = rootComp.features.sweepFeatures
+    sweep_input = sweeps.createInput(profile, path, op_map[operation])
+
+    taper_angle = params.get('taper_angle', 0)
+    if taper_angle != 0:
+        sweep_input.taperAngle = adsk.core.ValueInput.createByString(f"{taper_angle} deg")
+
+    twist_angle = params.get('twist_angle', 0)
+    if twist_angle != 0:
+        sweep_input.twistAngle = adsk.core.ValueInput.createByString(f"{twist_angle} deg")
+
+    feat = sweeps.add(sweep_input)
+    return {"success": True, "feature_name": feat.name}
+
+
+def loft(design, rootComp, params):
+    sketch_indices = params.get('sketch_indices', [])
+    if len(sketch_indices) < 2:
+        return {"success": False, "error": "Loft requires at least 2 sketch indices"}
+
+    if len(sketch_indices) != len(set(sketch_indices)):
+        return {"success": False, "error": "Loft sections must be from different sketches on different planes"}
+
+    profile_indices = params.get('profile_indices', [0] * len(sketch_indices))
+    if len(profile_indices) < len(sketch_indices):
+        profile_indices.extend([0] * (len(sketch_indices) - len(profile_indices)))
+
+    op_map = {
+        'new': adsk.fusion.FeatureOperations.NewBodyFeatureOperation,
+        'join': adsk.fusion.FeatureOperations.JoinFeatureOperation,
+        'cut': adsk.fusion.FeatureOperations.CutFeatureOperation,
+        'intersect': adsk.fusion.FeatureOperations.IntersectFeatureOperation,
+    }
+    operation = params.get('operation', 'new')
+    if operation not in op_map:
+        return {"success": False, "error": f"Unknown operation '{operation}'. Use 'new', 'join', 'cut', or 'intersect'."}
+
+    loft_feats = rootComp.features.loftFeatures
+    loft_input = loft_feats.createInput(op_map[operation])
+
+    for i, sketch_idx in enumerate(sketch_indices):
+        if sketch_idx < 0 or sketch_idx >= rootComp.sketches.count:
+            return {"success": False, "error": f"Sketch index {sketch_idx} out of range. Design has {rootComp.sketches.count} sketches (0-{rootComp.sketches.count - 1})."}
+        sketch = rootComp.sketches.item(sketch_idx)
+        prof_idx = profile_indices[i]
+        if sketch.profiles.count == 0:
+            return {"success": False, "error": f"No profiles in sketch {sketch_idx}. Draw closed geometry before lofting."}
+        if prof_idx < 0 or prof_idx >= sketch.profiles.count:
+            return {"success": False, "error": f"Profile index {prof_idx} out of range for sketch {sketch_idx}. Sketch has {sketch.profiles.count} profiles (0-{sketch.profiles.count - 1})."}
+        profile = sketch.profiles.item(prof_idx)
+        loft_input.loftSections.add(profile)
+
+    loft_input.isSolid = params.get('is_solid', True)
+    loft_input.isClosed = params.get('is_closed', False)
+
+    feat = loft_feats.add(loft_input)
+    return {"success": True, "feature_name": feat.name}
