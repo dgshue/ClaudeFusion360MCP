@@ -345,6 +345,82 @@ def construction_point(x: float = 0, y: float = 0, z: float = 0) -> dict:
     return send_fusion_command("construction_point", {"x": x, "y": y, "z": z})
 
 # =============================================================================
+# MANUFACTURING FEATURES (HOLES & THREADS)
+# =============================================================================
+
+@mcp.tool()
+def hole(diameter: float, depth: float = None, hole_type: str = "simple",
+         x: float = 0, y: float = 0, face: int = None, body_index: int = None,
+         counterbore_diameter: float = None, counterbore_depth: float = None,
+         countersink_diameter: float = None, countersink_angle: float = 82) -> dict:
+    """
+    Create a hole in a body face. Automatically creates a sketch point for positioning.
+
+    Supports three hole types: simple, counterbore, and countersink.
+    If depth is omitted, creates a through-all hole.
+
+    Args:
+        diameter: Hole diameter in cm
+        depth: Hole depth in cm (omit for through-all)
+        hole_type: "simple", "counterbore", or "countersink" (default "simple")
+        x: X position on face in cm (default 0)
+        y: Y position on face in cm (default 0)
+        face: Face index for hole placement (default: top face)
+        body_index: Which body (default: most recent)
+        counterbore_diameter: Counterbore diameter in cm (required for counterbore type)
+        counterbore_depth: Counterbore depth in cm (required for counterbore type)
+        countersink_diameter: Countersink diameter in cm (required for countersink type)
+        countersink_angle: Countersink angle in degrees (default 82)
+
+    Use get_body_info() to find face indices.
+    """
+    params = {"diameter": diameter, "hole_type": hole_type, "x": x, "y": y,
+              "countersink_angle": countersink_angle}
+    if depth is not None:
+        params["depth"] = depth
+    if face is not None:
+        params["face"] = face
+    if body_index is not None:
+        params["body_index"] = body_index
+    if counterbore_diameter is not None:
+        params["counterbore_diameter"] = counterbore_diameter
+    if counterbore_depth is not None:
+        params["counterbore_depth"] = counterbore_depth
+    if countersink_diameter is not None:
+        params["countersink_diameter"] = countersink_diameter
+    return send_fusion_command("hole", params)
+
+@mcp.tool()
+def thread(face: int, body_index: int = None, thread_type: str = "ISO Metric profile",
+           designation: str = "M6x1.0", thread_class: str = "6g",
+           is_internal: bool = False, full_length: bool = True,
+           length: float = None) -> dict:
+    """
+    Apply threads to a cylindrical face. Face MUST be cylindrical.
+
+    Uses ISO Metric thread specifications by default. Common designations:
+    M3x0.5, M4x0.7, M5x0.8, M6x1.0, M8x1.25, M10x1.5, M12x1.75
+
+    Args:
+        face: Face index of the cylindrical face to thread (use get_body_info() to find)
+        body_index: Which body (default: most recent)
+        thread_type: Thread standard (default "ISO Metric profile")
+        designation: Thread size designation (default "M6x1.0")
+        thread_class: Thread tolerance class (default "6g" for external, use "6H" for internal)
+        is_internal: True for internal threads (holes), False for external (default False)
+        full_length: Thread the full length of the face (default True)
+        length: Thread length in cm (used when full_length is False)
+    """
+    params = {"face": face, "thread_type": thread_type,
+              "designation": designation, "thread_class": thread_class,
+              "is_internal": is_internal, "full_length": full_length}
+    if body_index is not None:
+        params["body_index"] = body_index
+    if length is not None:
+        params["length"] = length
+    return send_fusion_command("thread", params)
+
+# =============================================================================
 # 3D FEATURE OPERATIONS (ENHANCED)
 # =============================================================================
 
