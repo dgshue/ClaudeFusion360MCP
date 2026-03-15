@@ -4,7 +4,8 @@ from .sketch import (
 )
 from .feature import (
     extrude, revolve, fillet, chamfer, shell, draft,
-    pattern_rectangular, pattern_circular, mirror, combine
+    pattern_rectangular, pattern_circular, mirror, combine,
+    sweep, loft
 )
 from .query import get_design_info, get_body_info, measure
 from .component import (
@@ -33,6 +34,7 @@ from .sketch_dimensions import (
 )
 from .sketch_query import get_sketch_info
 from .construction import construction_plane, construction_axis, construction_point
+from .hole_thread import hole, thread
 
 
 # Dict mapping all 42 tool names (excluding batch, which is handled inline)
@@ -71,6 +73,8 @@ HANDLER_MAP = {
     'pattern_circular': pattern_circular,
     'mirror': mirror,
     'combine': combine,
+    'sweep': sweep,
+    'loft': loft,
 
     # Query tools (3)
     'get_design_info': get_design_info,
@@ -126,4 +130,8 @@ HANDLER_MAP = {
     'construction_plane': construction_plane,
     'construction_axis': construction_axis,
     'construction_point': construction_point,
+
+    # Manufacturing features (Phase 3)
+    'hole': hole,
+    'thread': thread,
 }

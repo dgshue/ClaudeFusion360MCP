@@ -376,6 +376,66 @@ def revolve(angle: float, axis: str = "Y") -> dict:
     return send_fusion_command("revolve", {"angle": angle, "axis": axis})
 
 @mcp.tool()
+def sweep(profile_sketch_index: int = None, profile_index: int = 0,
+          path_sketch_index: int = None, path_curve_index: int = 0,
+          taper_angle: float = 0, twist_angle: float = 0,
+          operation: str = "new") -> dict:
+    """
+    Sweep a sketch profile along a path curve to create pipes, channels, or curved extrusions.
+
+    IMPORTANT: Profile and path must be in DIFFERENT sketches.
+    Default behavior: uses second-to-last sketch for profile, last sketch for path.
+
+    Args:
+        profile_sketch_index: Sketch containing the profile (default: second-to-last sketch)
+        profile_index: Which profile in the sketch (default 0)
+        path_sketch_index: Sketch containing the path curve (default: last sketch)
+        path_curve_index: Which curve to use as path (default 0)
+        taper_angle: Taper angle in degrees during sweep (default 0)
+        twist_angle: Twist angle in degrees along sweep (default 0)
+        operation: "new", "join", "cut", or "intersect" (default "new")
+    """
+    params = {
+        "profile_index": profile_index,
+        "path_curve_index": path_curve_index,
+        "taper_angle": taper_angle,
+        "twist_angle": twist_angle,
+        "operation": operation
+    }
+    if profile_sketch_index is not None:
+        params["profile_sketch_index"] = profile_sketch_index
+    if path_sketch_index is not None:
+        params["path_sketch_index"] = path_sketch_index
+    return send_fusion_command("sweep", params)
+
+@mcp.tool()
+def loft(sketch_indices: list, profile_indices: list = None,
+         is_solid: bool = True, is_closed: bool = False,
+         operation: str = "new") -> dict:
+    """
+    Loft between 2 or more sketch profiles to create smooth shape transitions.
+
+    Each profile must be in a different sketch on a different plane.
+    Use construction_plane() to create offset planes for multi-section lofts.
+
+    Args:
+        sketch_indices: List of sketch indices containing profiles (minimum 2, order matters)
+        profile_indices: List of profile indices per sketch (default [0, 0, ...])
+        is_solid: Create solid body (True) or surface (False) (default True)
+        is_closed: Close the loft (connect last section to first) (default False)
+        operation: "new", "join", "cut", or "intersect" (default "new")
+    """
+    params = {
+        "sketch_indices": sketch_indices,
+        "is_solid": is_solid,
+        "is_closed": is_closed,
+        "operation": operation
+    }
+    if profile_indices is not None:
+        params["profile_indices"] = profile_indices
+    return send_fusion_command("loft", params)
+
+@mcp.tool()
 def fillet(radius: float, edges: list = None, body_index: int = None) -> dict:
     """
     Add fillets to edges of a body (units: cm).
