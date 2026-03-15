@@ -32,9 +32,10 @@ from .sketch_dimensions import (
     dimension_distance, dimension_radial, dimension_angular
 )
 from .sketch_query import get_sketch_info
+from .construction import construction_plane, construction_axis, construction_point
 
 
-# Dict mapping all 39 tool names (excluding batch, which is handled inline)
+# Dict mapping all 42 tool names (excluding batch, which is handled inline)
 # to their handler functions. Each handler has signature:
 #   handler(design, rootComp, params) -> dict
 HANDLER_MAP = {
@@ -120,4 +121,9 @@ HANDLER_MAP = {
 
     # Sketch query (Phase 2)
     'get_sketch_info': get_sketch_info,
+
+    # Construction geometry (Phase 3)
+    'construction_plane': construction_plane,
+    'construction_axis': construction_axis,
+    'construction_point': construction_point,
 }

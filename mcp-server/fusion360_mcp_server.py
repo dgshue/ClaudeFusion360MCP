@@ -293,6 +293,58 @@ def import_svg(file_path: str, x: float = 0, y: float = 0, scale: float = 1.0) -
     })
 
 # =============================================================================
+# CONSTRUCTION GEOMETRY (Phase 3)
+# =============================================================================
+
+@mcp.tool()
+def construction_plane(mode: str = "offset", plane: str = "XY", offset: float = 1.0, axis: str = "X", angle: float = 45.0) -> dict:
+    """
+    Create a construction (reference) plane for sketching or feature operations.
+
+    Args:
+        mode: Creation mode - "offset" (parallel to base plane) or "angle" (rotated around axis)
+        plane: Base plane - "XY", "XZ", or "YZ" (default "XY")
+        offset: Distance from base plane in cm (used in offset mode, default 1.0)
+        axis: Rotation axis for angle mode - "X", "Y", or "Z" (default "X")
+        angle: Rotation angle in degrees (used in angle mode, default 45.0)
+    """
+    params = {"mode": mode, "plane": plane, "offset": offset, "axis": axis, "angle": angle}
+    return send_fusion_command("construction_plane", params)
+
+@mcp.tool()
+def construction_axis(mode: str = "two_points", point1_x: float = 0, point1_y: float = 0, point1_z: float = 0, point2_x: float = 0, point2_y: float = 0, point2_z: float = 1.0) -> dict:
+    """
+    Create a construction (reference) axis for patterns, revolves, or other operations.
+
+    Args:
+        mode: Creation mode - "two_points" (default)
+        point1_x: First point X coordinate in cm (default 0)
+        point1_y: First point Y coordinate in cm (default 0)
+        point1_z: First point Z coordinate in cm (default 0)
+        point2_x: Second point X coordinate in cm (default 0)
+        point2_y: Second point Y coordinate in cm (default 0)
+        point2_z: Second point Z coordinate in cm (default 1.0)
+    """
+    params = {
+        "mode": mode,
+        "point1": {"x": point1_x, "y": point1_y, "z": point1_z},
+        "point2": {"x": point2_x, "y": point2_y, "z": point2_z}
+    }
+    return send_fusion_command("construction_axis", params)
+
+@mcp.tool()
+def construction_point(x: float = 0, y: float = 0, z: float = 0) -> dict:
+    """
+    Create a construction (reference) point for positioning holes, patterns, or other features.
+
+    Args:
+        x: X coordinate in cm (default 0)
+        y: Y coordinate in cm (default 0)
+        z: Z coordinate in cm (default 0)
+    """
+    return send_fusion_command("construction_point", {"x": x, "y": y, "z": z})
+
+# =============================================================================
 # 3D FEATURE OPERATIONS (ENHANCED)
 # =============================================================================
 
