@@ -1294,6 +1294,99 @@ def dimension_angular(curve_index: int, curve_index_2: int, value: float) -> dic
     })
 
 # =============================================================================
+# PARAMETRIC DESIGN (Phase 5)
+# =============================================================================
+
+@mcp.tool()
+def create_parameter(name: str, expression: str, unit: str = "cm", comment: str = "") -> dict:
+    """Create a named user parameter with an expression. Expressions can reference other parameters.
+    The parameter drives geometry when used in dimensions or features.
+
+    Args:
+        name: Parameter name (e.g., "width", "height")
+        expression: Value or expression (e.g., "5", "width * 2")
+        unit: Unit type -- cm, mm, in, ft, deg, rad (default "cm")
+        comment: Optional description of the parameter
+
+    Examples:
+        create_parameter(name="width", expression="5", unit="cm")
+        create_parameter(name="height", expression="width * 2", unit="cm")
+    """
+    return send_fusion_command("create_parameter", {
+        "name": name, "expression": expression, "unit": unit, "comment": comment
+    })
+
+@mcp.tool()
+def set_parameter(name: str, expression: str) -> dict:
+    """Update an existing parameter's expression. The model regenerates automatically.
+    Expressions can reference other parameters.
+
+    Args:
+        name: Parameter to update
+        expression: New value or expression (e.g., "10", "width + 3")
+
+    Examples:
+        set_parameter(name="width", expression="10")
+        set_parameter(name="height", expression="width + 3")
+    """
+    return send_fusion_command("set_parameter", {"name": name, "expression": expression})
+
+# =============================================================================
+# TIMELINE NAVIGATION (Phase 5)
+# =============================================================================
+
+@mcp.tool()
+def get_timeline() -> dict:
+    """Retrieve the design timeline showing all features with their status.
+    Use to understand design history and find positions for rollback.
+
+    Examples:
+        get_timeline()
+    """
+    return send_fusion_command("get_timeline", {})
+
+@mcp.tool()
+def edit_at_timeline(position: int) -> dict:
+    """Move the timeline marker to a specific position. Features after the marker are suppressed.
+    Use position=-1 to return to end (all features active).
+
+    Args:
+        position: Timeline position (0=before all features, N=after Nth feature, -1=end)
+
+    Examples:
+        edit_at_timeline(position=3)
+        edit_at_timeline(position=-1)
+    """
+    return send_fusion_command("edit_at_timeline", {"position": position})
+
+@mcp.tool()
+def create_marker(name: str) -> dict:
+    """Create a named marker at the current timeline position. Markers are stored in-memory
+    (not persistent across Fusion sessions). Use with undo_to_marker for named rollback points.
+
+    Args:
+        name: Marker identifier
+
+    Examples:
+        create_marker(name="before_fillets")
+        create_marker(name="base_shape")
+    """
+    return send_fusion_command("create_marker", {"name": name})
+
+@mcp.tool()
+def undo_to_marker(name: str) -> dict:
+    """Roll the timeline back to a previously created marker position. Features after the marker
+    are suppressed. Use get_timeline() to see current state after rollback.
+
+    Args:
+        name: Marker to roll back to
+
+    Examples:
+        undo_to_marker(name="before_fillets")
+    """
+    return send_fusion_command("undo_to_marker", {"name": name})
+
+# =============================================================================
 # MAIN
 # =============================================================================
 
