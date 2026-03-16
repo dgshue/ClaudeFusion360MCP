@@ -113,11 +113,11 @@
 
 ### Assembly Enhancement
 
-- [ ] **ASSM-01**: `create_rigid_joint` tool and handler for fixed connections
-- [ ] **ASSM-02**: `create_cylindrical_joint` tool and handler for rotation + translation motion
-- [ ] **ASSM-03**: `create_pin_slot_joint` tool and handler for pin-in-slot motion
-- [ ] **ASSM-04**: `create_planar_joint` tool and handler for planar sliding motion
-- [ ] **ASSM-05**: `create_ball_joint` tool and handler for spherical rotation
+- [x] **ASSM-01**: `create_rigid_joint` tool and handler for fixed connections
+- [x] **ASSM-02**: `create_cylindrical_joint` tool and handler for rotation + translation motion
+- [x] **ASSM-03**: `create_pin_slot_joint` tool and handler for pin-in-slot motion
+- [x] **ASSM-04**: `create_planar_joint` tool and handler for planar sliding motion
+- [x] **ASSM-05**: `create_ball_joint` tool and handler for spherical rotation
 - [x] **ASSM-06**: `create_sketch_on_face` tool and handler for sketching directly on body faces
 
 ### Parametric Design
@@ -234,11 +234,11 @@
 | NFEAT-05 | Phase 3 | Complete |
 | NFEAT-06 | Phase 3 | Complete |
 | NFEAT-07 | Phase 3 | Complete |
-| ASSM-01 | Phase 4 | Pending |
-| ASSM-02 | Phase 4 | Pending |
-| ASSM-03 | Phase 4 | Pending |
-| ASSM-04 | Phase 4 | Pending |
-| ASSM-05 | Phase 4 | Pending |
+| ASSM-01 | Phase 4 | Complete |
+| ASSM-02 | Phase 4 | Complete |
+| ASSM-03 | Phase 4 | Complete |
+| ASSM-04 | Phase 4 | Complete |
+| ASSM-05 | Phase 4 | Complete |
 | ASSM-06 | Phase 4 | Complete |
 | PARAM-01 | Phase 5 | Pending |
 | PARAM-02 | Phase 5 | Pending |

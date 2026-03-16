@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Completed 04-02-PLAN.md
-last_updated: "2026-03-16T00:53:56.897Z"
+stopped_at: Completed 04-01-PLAN.md
+last_updated: "2026-03-16T00:55:43.675Z"
 last_activity: 2026-03-15 -- Completed Plan 03-01 (Construction Geometry)
 progress:
   total_phases: 5
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 14
-  completed_plans: 13
+  completed_plans: 14
   percent: 83
 ---
 
@@ -63,6 +63,7 @@ Progress: [████████░░] 83%
 | Phase 03 P02 | 2min | 2 tasks | 3 files |
 | Phase 03 P03 | 2min | 2 tasks | 3 files |
 | Phase 04 P02 | 1min | 2 tasks | 3 files |
+| Phase 04 P01 | 3min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -102,6 +103,9 @@ Recent decisions affecting current work:
 - [Phase 03]: Auto-create sketch + point on target face for hole positioning
 - [Phase 03]: Thread handler wraps creation in try/except with cylindrical face guidance
 - [Phase 04]: Face-based sketches set base_plane to face to skip coordinate correction
+- [Phase 04]: Pin-slot derives rotation axis perpendicular to slot direction automatically
+- [Phase 04]: Ball joint uses internal Z-pitch/X-yaw defaults, no user axis param needed
+- [Phase 04]: set_joint_angle/distance use set membership for multi-DOF type validation
 
 ### Pending Todos
 
@@ -114,6 +118,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-16T00:53:56.892Z
-Stopped at: Completed 04-02-PLAN.md
+Last session: 2026-03-16T00:55:43.668Z
+Stopped at: Completed 04-01-PLAN.md
 Resume file: None
