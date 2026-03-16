@@ -877,8 +877,132 @@ def create_slider_joint(
     return send_fusion_command("create_slider_joint", params)
 
 @mcp.tool()
+def create_rigid_joint(
+    component1_index: int = None,
+    component2_index: int = None,
+    x: float = 0, y: float = 0, z: float = 0
+) -> dict:
+    """Create a rigid (fixed) joint between two components. No relative motion allowed.
+    Position defaults to origin since rigid joints lock components in place."""
+    params = {"x": x, "y": y, "z": z}
+    if component1_index is not None:
+        params["component1_index"] = component1_index
+    if component2_index is not None:
+        params["component2_index"] = component2_index
+    return send_fusion_command("create_rigid_joint", params)
+
+@mcp.tool()
+def create_cylindrical_joint(
+    component1_index: int = None,
+    component2_index: int = None,
+    x: float = 0, y: float = 0, z: float = 0,
+    axis_x: float = 0, axis_y: float = 0, axis_z: float = 1,
+    min_angle: float = None, max_angle: float = None,
+    min_distance: float = None, max_distance: float = None
+) -> dict:
+    """Create a cylindrical joint (rotation + translation along same axis)."""
+    params = {"x": x, "y": y, "z": z, "axis_x": axis_x, "axis_y": axis_y, "axis_z": axis_z}
+    if component1_index is not None:
+        params["component1_index"] = component1_index
+    if component2_index is not None:
+        params["component2_index"] = component2_index
+    if min_angle is not None:
+        params["min_angle"] = min_angle
+    if max_angle is not None:
+        params["max_angle"] = max_angle
+    if min_distance is not None:
+        params["min_distance"] = min_distance
+    if max_distance is not None:
+        params["max_distance"] = max_distance
+    return send_fusion_command("create_cylindrical_joint", params)
+
+@mcp.tool()
+def create_pin_slot_joint(
+    component1_index: int = None,
+    component2_index: int = None,
+    x: float = 0, y: float = 0, z: float = 0,
+    axis_x: float = 0, axis_y: float = 0, axis_z: float = 1,
+    min_angle: float = None, max_angle: float = None,
+    min_distance: float = None, max_distance: float = None
+) -> dict:
+    """Create a pin-slot joint (rotation + sliding). Axis defines slot direction; rotation is perpendicular."""
+    params = {"x": x, "y": y, "z": z, "axis_x": axis_x, "axis_y": axis_y, "axis_z": axis_z}
+    if component1_index is not None:
+        params["component1_index"] = component1_index
+    if component2_index is not None:
+        params["component2_index"] = component2_index
+    if min_angle is not None:
+        params["min_angle"] = min_angle
+    if max_angle is not None:
+        params["max_angle"] = max_angle
+    if min_distance is not None:
+        params["min_distance"] = min_distance
+    if max_distance is not None:
+        params["max_distance"] = max_distance
+    return send_fusion_command("create_pin_slot_joint", params)
+
+@mcp.tool()
+def create_planar_joint(
+    component1_index: int = None,
+    component2_index: int = None,
+    x: float = 0, y: float = 0, z: float = 0,
+    axis_x: float = 0, axis_y: float = 1, axis_z: float = 0,
+    min_primary_slide: float = None, max_primary_slide: float = None,
+    min_secondary_slide: float = None, max_secondary_slide: float = None,
+    min_angle: float = None, max_angle: float = None
+) -> dict:
+    """Create a planar joint (2D sliding + rotation on a plane). Axis defines plane normal. All DOF unconstrained by default."""
+    params = {"x": x, "y": y, "z": z, "axis_x": axis_x, "axis_y": axis_y, "axis_z": axis_z}
+    if component1_index is not None:
+        params["component1_index"] = component1_index
+    if component2_index is not None:
+        params["component2_index"] = component2_index
+    if min_primary_slide is not None:
+        params["min_primary_slide"] = min_primary_slide
+    if max_primary_slide is not None:
+        params["max_primary_slide"] = max_primary_slide
+    if min_secondary_slide is not None:
+        params["min_secondary_slide"] = min_secondary_slide
+    if max_secondary_slide is not None:
+        params["max_secondary_slide"] = max_secondary_slide
+    if min_angle is not None:
+        params["min_angle"] = min_angle
+    if max_angle is not None:
+        params["max_angle"] = max_angle
+    return send_fusion_command("create_planar_joint", params)
+
+@mcp.tool()
+def create_ball_joint(
+    component1_index: int = None,
+    component2_index: int = None,
+    x: float = 0, y: float = 0, z: float = 0,
+    min_pitch: float = None, max_pitch: float = None,
+    min_roll: float = None, max_roll: float = None,
+    min_yaw: float = None, max_yaw: float = None
+) -> dict:
+    """Create a ball joint (spherical rotation, 3 DOF). No axis needed -- rotation is unconstrained in all directions."""
+    params = {"x": x, "y": y, "z": z}
+    if component1_index is not None:
+        params["component1_index"] = component1_index
+    if component2_index is not None:
+        params["component2_index"] = component2_index
+    if min_pitch is not None:
+        params["min_pitch"] = min_pitch
+    if max_pitch is not None:
+        params["max_pitch"] = max_pitch
+    if min_roll is not None:
+        params["min_roll"] = min_roll
+    if max_roll is not None:
+        params["max_roll"] = max_roll
+    if min_yaw is not None:
+        params["min_yaw"] = min_yaw
+    if max_yaw is not None:
+        params["max_yaw"] = max_yaw
+    return send_fusion_command("create_ball_joint", params)
+
+@mcp.tool()
 def set_joint_angle(angle: float, joint_index: int = None) -> dict:
-    """Animate a revolute joint to a specific angle (degrees)"""
+    """Drive rotation on a revolute, cylindrical, or pin-slot joint (degrees)"""
     params = {"angle": angle}
     if joint_index is not None:
         params["joint_index"] = joint_index
@@ -886,7 +1010,7 @@ def set_joint_angle(angle: float, joint_index: int = None) -> dict:
 
 @mcp.tool()
 def set_joint_distance(distance: float, joint_index: int = None) -> dict:
-    """Animate a slider joint to a specific distance (cm)"""
+    """Drive translation on a slider, cylindrical, or pin-slot joint (cm)"""
     params = {"distance": distance}
     if joint_index is not None:
         params["joint_index"] = joint_index
