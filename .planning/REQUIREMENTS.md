@@ -118,7 +118,7 @@
 - [ ] **ASSM-03**: `create_pin_slot_joint` tool and handler for pin-in-slot motion
 - [ ] **ASSM-04**: `create_planar_joint` tool and handler for planar sliding motion
 - [ ] **ASSM-05**: `create_ball_joint` tool and handler for spherical rotation
-- [ ] **ASSM-06**: `create_sketch_on_face` tool and handler for sketching directly on body faces
+- [x] **ASSM-06**: `create_sketch_on_face` tool and handler for sketching directly on body faces
 
 ### Parametric Design
 
@@ -239,7 +239,7 @@
 | ASSM-03 | Phase 4 | Pending |
 | ASSM-04 | Phase 4 | Pending |
 | ASSM-05 | Phase 4 | Pending |
-| ASSM-06 | Phase 4 | Pending |
+| ASSM-06 | Phase 4 | Complete |
 | PARAM-01 | Phase 5 | Pending |
 | PARAM-02 | Phase 5 | Pending |
 | TIME-01 | Phase 5 | Pending |
