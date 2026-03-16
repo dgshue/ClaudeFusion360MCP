@@ -122,14 +122,14 @@
 
 ### Parametric Design
 
-- [ ] **PARAM-01**: `create_parameter` tool and handler for creating named user parameters
-- [ ] **PARAM-02**: `set_parameter` tool and handler for updating parameter values (model updates automatically)
+- [x] **PARAM-01**: `create_parameter` tool and handler for creating named user parameters
+- [x] **PARAM-02**: `set_parameter` tool and handler for updating parameter values (model updates automatically)
 
 ### Timeline
 
-- [ ] **TIME-01**: `get_timeline` tool and handler to retrieve design timeline with feature history
-- [ ] **TIME-02**: `edit_at_timeline` tool and handler to roll back to a specific timeline position for editing
-- [ ] **TIME-03**: `undo_to_marker` tool and handler to undo back to a named timeline marker
+- [x] **TIME-01**: `get_timeline` tool and handler to retrieve design timeline with feature history
+- [x] **TIME-02**: `edit_at_timeline` tool and handler to roll back to a specific timeline position for editing
+- [x] **TIME-03**: `undo_to_marker` tool and handler to undo back to a named timeline marker
 
 ### Discoverability
 
@@ -240,11 +240,11 @@
 | ASSM-04 | Phase 4 | Complete |
 | ASSM-05 | Phase 4 | Complete |
 | ASSM-06 | Phase 4 | Complete |
-| PARAM-01 | Phase 5 | Pending |
-| PARAM-02 | Phase 5 | Pending |
-| TIME-01 | Phase 5 | Pending |
-| TIME-02 | Phase 5 | Pending |
-| TIME-03 | Phase 5 | Pending |
+| PARAM-01 | Phase 5 | Complete |
+| PARAM-02 | Phase 5 | Complete |
+| TIME-01 | Phase 5 | Complete |
+| TIME-02 | Phase 5 | Complete |
+| TIME-03 | Phase 5 | Complete |
 | DISC-01 | Phase 5 | Pending |
 | DISC-02 | Phase 5 | Pending |
 | DISC-03 | Phase 5 | Pending |
