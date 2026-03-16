@@ -10,6 +10,7 @@ if _addin_dir not in sys.path:
 
 from helpers.bodies import get_body
 from helpers.selection import resolve_edges, resolve_faces
+from helpers.param_annotation import annotate_value, annotate_feature_dimensions
 
 
 def extrude(design, rootComp, params):
@@ -36,7 +37,14 @@ def extrude(design, rootComp, params):
         ext_input.taperAngle = adsk.core.ValueInput.createByReal(math.radians(taper_angle))
 
     ext_feature = extrudes.add(ext_input)
-    return {"success": True, "feature_name": ext_feature.name}
+    result = {"success": True, "feature_name": ext_feature.name}
+    try:
+        dims = annotate_feature_dimensions(design, ext_feature)
+        if dims:
+            result["dimensions"] = dims
+    except Exception:
+        pass
+    return result
 
 
 def revolve(design, rootComp, params):
@@ -62,7 +70,14 @@ def revolve(design, rootComp, params):
     angle = math.radians(params.get('angle', 360))
     rev_input.setAngleExtent(False, adsk.core.ValueInput.createByReal(angle))
     rev_feature = revolves.add(rev_input)
-    return {"success": True, "feature_name": rev_feature.name}
+    result = {"success": True, "feature_name": rev_feature.name}
+    try:
+        dims = annotate_feature_dimensions(design, rev_feature)
+        if dims:
+            result["dimensions"] = dims
+    except Exception:
+        pass
+    return result
 
 
 def fillet(design, rootComp, params):
@@ -83,7 +98,12 @@ def fillet(design, rootComp, params):
     fillet_input = fillets.createInput()
     fillet_input.addConstantRadiusEdgeSet(edges, adsk.core.ValueInput.createByReal(params['radius']), True)
     fillet_feat = fillets.add(fillet_input)
-    return {"success": True, "feature_name": fillet_feat.name}
+    result = {"success": True, "feature_name": fillet_feat.name}
+    try:
+        result["radius"] = annotate_value(design, params['radius'])
+    except Exception:
+        pass
+    return result
 
 
 def chamfer(design, rootComp, params):
@@ -117,7 +137,12 @@ def chamfer(design, rootComp, params):
         chamfer_input.setToEqualDistance(adsk.core.ValueInput.createByReal(distance))
 
     chamfer_feat = chamfers.add(chamfer_input)
-    return {"success": True, "feature_name": chamfer_feat.name}
+    result = {"success": True, "feature_name": chamfer_feat.name}
+    try:
+        result["distance"] = annotate_value(design, distance)
+    except Exception:
+        pass
+    return result
 
 
 def shell(design, rootComp, params):
@@ -136,7 +161,12 @@ def shell(design, rootComp, params):
     shell_input = shell_feats.createInput(faces_collection, False)
     shell_input.insideThickness = adsk.core.ValueInput.createByReal(thickness)
     shell_feat = shell_feats.add(shell_input)
-    return {"success": True, "feature_name": shell_feat.name}
+    result = {"success": True, "feature_name": shell_feat.name}
+    try:
+        result["thickness"] = annotate_value(design, thickness)
+    except Exception:
+        pass
+    return result
 
 
 def draft(design, rootComp, params):

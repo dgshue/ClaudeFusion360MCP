@@ -9,6 +9,7 @@ if _addin_dir not in sys.path:
 
 from helpers.bodies import get_body
 from helpers.selection import label_edge, label_face
+from helpers.param_annotation import annotate_value
 
 
 def get_design_info(design, rootComp, params):
@@ -91,6 +92,25 @@ def get_body_info(design, rootComp, params):
         })
 
     bbox = body.boundingBox
+    size_x = round(bbox.maxPoint.x - bbox.minPoint.x, 4)
+    size_y = round(bbox.maxPoint.y - bbox.minPoint.y, 4)
+    size_z = round(bbox.maxPoint.z - bbox.minPoint.z, 4)
+
+    bounding_box = {
+        "min": [round(bbox.minPoint.x, 4), round(bbox.minPoint.y, 4), round(bbox.minPoint.z, 4)],
+        "max": [round(bbox.maxPoint.x, 4), round(bbox.maxPoint.y, 4), round(bbox.maxPoint.z, 4)]
+    }
+
+    # Annotate bounding box dimensions with parameter linkage
+    try:
+        bounding_box["size_x"] = annotate_value(design, size_x)
+        bounding_box["size_y"] = annotate_value(design, size_y)
+        bounding_box["size_z"] = annotate_value(design, size_z)
+    except Exception:
+        bounding_box["size_x"] = {"value": size_x, "unit": "cm"}
+        bounding_box["size_y"] = {"value": size_y, "unit": "cm"}
+        bounding_box["size_z"] = {"value": size_z, "unit": "cm"}
+
     return {
         "success": True,
         "body_name": body.name,
@@ -98,10 +118,7 @@ def get_body_info(design, rootComp, params):
         "face_count": body.faces.count,
         "edges": edges_info,
         "faces": faces_info,
-        "bounding_box": {
-            "min": [round(bbox.minPoint.x, 4), round(bbox.minPoint.y, 4), round(bbox.minPoint.z, 4)],
-            "max": [round(bbox.maxPoint.x, 4), round(bbox.maxPoint.y, 4), round(bbox.maxPoint.z, 4)]
-        }
+        "bounding_box": bounding_box
     }
 
 
@@ -112,7 +129,11 @@ def measure(design, rootComp, params):
     if measure_type == 'body':
         props = body.physicalProperties
         bbox = body.boundingBox
-        return {
+        size_x = round(bbox.maxPoint.x - bbox.minPoint.x, 4)
+        size_y = round(bbox.maxPoint.y - bbox.minPoint.y, 4)
+        size_z = round(bbox.maxPoint.z - bbox.minPoint.z, 4)
+
+        result = {
             "success": True,
             "body_name": body.name,
             "volume_cm3": round(props.volume, 6),
@@ -120,11 +141,7 @@ def measure(design, rootComp, params):
             "bounding_box": {
                 "min": [round(bbox.minPoint.x, 4), round(bbox.minPoint.y, 4), round(bbox.minPoint.z, 4)],
                 "max": [round(bbox.maxPoint.x, 4), round(bbox.maxPoint.y, 4), round(bbox.maxPoint.z, 4)],
-                "size": [
-                    round(bbox.maxPoint.x - bbox.minPoint.x, 4),
-                    round(bbox.maxPoint.y - bbox.minPoint.y, 4),
-                    round(bbox.maxPoint.z - bbox.minPoint.z, 4)
-                ]
+                "size": [size_x, size_y, size_z]
             },
             "center_of_mass": {
                 "x": round(props.centerOfMass.x, 4),
@@ -132,6 +149,16 @@ def measure(design, rootComp, params):
                 "z": round(props.centerOfMass.z, 4)
             }
         }
+        # Annotate size dimensions with parameter linkage
+        try:
+            result["bounding_box"]["size_annotated"] = {
+                "x": annotate_value(design, size_x),
+                "y": annotate_value(design, size_y),
+                "z": annotate_value(design, size_z),
+            }
+        except Exception:
+            pass
+        return result
 
     elif measure_type == 'edge':
         edge_index = params.get('edge_index', 0)
@@ -141,11 +168,17 @@ def measure(design, rootComp, params):
                 f"Use get_body_info() to see available edges."
             )
         edge = body.edges.item(edge_index)
-        return {
+        length = round(edge.length, 4)
+        result = {
             "success": True,
             "edge_index": edge_index,
-            "length_cm": round(edge.length, 4)
+            "length_cm": length
         }
+        try:
+            result["length"] = annotate_value(design, length)
+        except Exception:
+            pass
+        return result
 
     elif measure_type == 'face':
         face_index = params.get('face_index', 0)
@@ -155,11 +188,17 @@ def measure(design, rootComp, params):
                 f"Use get_body_info() to see available faces."
             )
         face = body.faces.item(face_index)
-        return {
+        area = round(face.area, 4)
+        result = {
             "success": True,
             "face_index": face_index,
-            "area_cm2": round(face.area, 4)
+            "area_cm2": area
         }
+        try:
+            result["area"] = annotate_value(design, area, "cm2")
+        except Exception:
+            pass
+        return result
 
     else:
         raise ValueError(f"Unknown measure type: {measure_type}. Use 'body', 'edge', or 'face'.")
