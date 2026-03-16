@@ -96,10 +96,12 @@ Plans:
   2. User can view the design timeline, roll back to any point in history for editing, and undo to a named marker
   3. An AI model connecting via MCP can discover all available tools, their parameters, and usage examples through resource endpoints and rich docstrings without any external documentation
   4. An AI model can access workflow guides and prompt templates for common CAD tasks (enclosures, gears, assemblies) through MCP protocol primitives
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 05-01: TBD
+- [ ] 05-01-PLAN.md -- Parametric design handlers (create_parameter, set_parameter) + timeline navigation handlers (get_timeline, edit_at_timeline, create_marker, undo_to_marker) + 6 new MCP tools
+- [ ] 05-02-PLAN.md -- MCP resource content files: 4 tool reference docs + coordinate system guide + workflow patterns guide
+- [ ] 05-03-PLAN.md -- MCP resource/prompt registration + rich docstring enrichment for all 79+ tools
 
 ## Progress
 
@@ -112,4 +114,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | 2. Sketch Completeness | 3/4 | In Progress|  |
 | 3. Advanced 3D Features | 3/3 | Complete   | 2026-03-15 |
 | 4. Assembly Enhancement | 0/2 | Not started | - |
-| 5. Parametric, Timeline, and Discoverability | 0/1 | Not started | - |
+| 5. Parametric, Timeline, and Discoverability | 0/3 | Not started | - |
