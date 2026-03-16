@@ -35,6 +35,8 @@ from pathlib import Path
 COMM_DIR = Path.home() / "fusion_mcp_comm"
 COMM_DIR.mkdir(exist_ok=True)
 
+RESOURCES_DIR = Path(__file__).parent / "resources"
+
 mcp = FastMCP("Fusion 360 v7.2 Enhanced")
 
 def send_fusion_command(tool_name: str, params: dict) -> dict:
@@ -1385,6 +1387,235 @@ def undo_to_marker(name: str) -> dict:
         undo_to_marker(name="before_fillets")
     """
     return send_fusion_command("undo_to_marker", {"name": name})
+
+# =============================================================================
+# MCP RESOURCE ENDPOINTS (Phase 5 - Discoverability)
+# =============================================================================
+
+@mcp.resource("docs://tools/sketch")
+def resource_tools_sketch() -> str:
+    """Tool reference documentation for sketch operations."""
+    path = RESOURCES_DIR / "tools" / "sketch.md"
+    if not path.exists():
+        return "Error: sketch.md resource file not found. Expected at: " + str(path)
+    return path.read_text()
+
+@mcp.resource("docs://tools/3d-features")
+def resource_tools_3d_features() -> str:
+    """Tool reference documentation for 3D feature operations."""
+    path = RESOURCES_DIR / "tools" / "3d-features.md"
+    if not path.exists():
+        return "Error: 3d-features.md resource file not found. Expected at: " + str(path)
+    return path.read_text()
+
+@mcp.resource("docs://tools/assembly")
+def resource_tools_assembly() -> str:
+    """Tool reference documentation for assembly and joint operations."""
+    path = RESOURCES_DIR / "tools" / "assembly.md"
+    if not path.exists():
+        return "Error: assembly.md resource file not found. Expected at: " + str(path)
+    return path.read_text()
+
+@mcp.resource("docs://tools/utility")
+def resource_tools_utility() -> str:
+    """Tool reference documentation for utility, query, and I/O operations."""
+    path = RESOURCES_DIR / "tools" / "utility.md"
+    if not path.exists():
+        return "Error: utility.md resource file not found. Expected at: " + str(path)
+    return path.read_text()
+
+@mcp.resource("docs://guides/coordinates")
+def resource_guides_coordinates() -> str:
+    """Coordinate system guide including units, planes, and XZ inversion."""
+    path = RESOURCES_DIR / "guides" / "coordinates.md"
+    if not path.exists():
+        return "Error: coordinates.md resource file not found. Expected at: " + str(path)
+    return path.read_text()
+
+@mcp.resource("docs://guides/workflows")
+def resource_guides_workflows() -> str:
+    """Workflow patterns guide with step-by-step CAD patterns and reasoning."""
+    path = RESOURCES_DIR / "guides" / "workflows.md"
+    if not path.exists():
+        return "Error: workflows.md resource file not found. Expected at: " + str(path)
+    return path.read_text()
+
+# =============================================================================
+# MCP PROMPT TEMPLATES (Phase 5 - Discoverability)
+# =============================================================================
+
+@mcp.prompt()
+def box_enclosure(width: str = "10", depth: str = "8", height: str = "5",
+                  wall_thickness: str = "0.2", fillet_radius: str = "0.3") -> str:
+    """Generate a step-by-step guide for creating a box enclosure with rounded edges."""
+    return f"""Create a box enclosure with these dimensions:
+- Width: {width} cm, Depth: {depth} cm, Height: {height} cm
+- Wall thickness: {wall_thickness} cm, Fillet radius: {fillet_radius} cm
+
+Step-by-step workflow:
+
+1. **Create the base sketch**
+   create_sketch(plane="XY")
+
+2. **Draw the rectangle**
+   draw_rectangle(x1=-{width}/2, y1=-{depth}/2, x2={width}/2, y2={depth}/2)
+   finish_sketch()
+
+3. **Extrude to full height**
+   extrude(distance={height})
+
+4. **Shell the body (remove top face)**
+   shell(thickness={wall_thickness}, faces_to_remove=[0])
+   REASONING: Shell BEFORE fillet because filleting changes edge topology.
+   If you fillet first, the face indices for shell will be wrong.
+
+5. **Fillet the outer edges**
+   fillet(radius={fillet_radius})
+   REASONING: Apply fillet last so shell face removal works on the original box geometry.
+
+Key tool sequence: create_sketch -> draw_rectangle -> finish_sketch -> extrude -> shell -> fillet
+The ordering matters: shell before fillet preserves correct face indices."""
+
+@mcp.prompt()
+def cylinder(radius: str = "2.5", height: str = "5",
+             hollow: str = "false", wall_thickness: str = "0.2") -> str:
+    """Generate a step-by-step guide for creating a solid or hollow cylinder."""
+    hollow_step = ""
+    if hollow.lower() == "true":
+        hollow_step = f"""
+5. **Shell to make hollow**
+   shell(thickness={wall_thickness}, faces_to_remove=[0])
+   This removes the top face and hollows the cylinder with {wall_thickness} cm walls.
+"""
+    return f"""Create a {"hollow " if hollow.lower() == "true" else ""}cylinder:
+- Radius: {radius} cm, Height: {height} cm
+{"- Wall thickness: " + wall_thickness + " cm" if hollow.lower() == "true" else ""}
+
+Step-by-step workflow:
+
+1. **Create the base sketch**
+   create_sketch(plane="XY")
+
+2. **Draw the circle**
+   draw_circle(center_x=0, center_y=0, radius={radius})
+
+3. **Finish the sketch**
+   finish_sketch()
+
+4. **Extrude to height**
+   extrude(distance={height})
+{hollow_step}
+Key tool sequence: create_sketch -> draw_circle -> finish_sketch -> extrude{" -> shell" if hollow.lower() == "true" else ""}"""
+
+@mcp.prompt()
+def spur_gear(module: str = "1", teeth: str = "20",
+              thickness: str = "5", bore_diameter: str = "3") -> str:
+    """Generate a step-by-step guide for creating an approximated spur gear."""
+    return f"""Create an approximated spur gear:
+- Module: {module}, Teeth: {teeth}, Thickness: {thickness} cm, Bore diameter: {bore_diameter} cm
+- Pitch diameter = module * teeth = {module} * {teeth} cm
+- Outer diameter = (teeth + 2) * module
+
+REASONING: True involute tooth profiles require complex math. This approach uses
+a simplified polygon approximation that works for prototyping and visual models.
+For production gears, use dedicated gear generation software.
+
+Step-by-step workflow:
+
+1. **Create a user parameter for the gear**
+   create_parameter(name="gear_module", expression="{module}", unit="cm")
+   create_parameter(name="gear_teeth", expression="{teeth}")
+   create_parameter(name="pitch_radius", expression="gear_module * gear_teeth / 2", unit="cm")
+
+2. **Create the base sketch for the gear blank**
+   create_sketch(plane="XY")
+
+3. **Draw the outer circle (addendum circle)**
+   draw_circle(center_x=0, center_y=0, radius=({module} * ({teeth} + 2)) / 2)
+
+4. **Finish the sketch and extrude**
+   finish_sketch()
+   extrude(distance={thickness})
+
+5. **Create the tooth profile sketch**
+   create_sketch(plane="XY")
+   REASONING: Sketch on the same plane to create a cutting profile for one tooth gap.
+
+6. **Draw a simplified tooth gap (wedge shape)**
+   Use draw_line() to create a V-shaped notch at the pitch circle radius.
+   The gap angle per tooth = 360 / {teeth} degrees, gap is roughly half that.
+
+7. **Pattern the tooth cuts circularly**
+   finish_sketch()
+   extrude(distance={thickness})  -- as a cut through the blank
+   pattern_circular(count={teeth}, angle=360, axis="Z")
+
+8. **Create the bore hole**
+   create_sketch(plane="XY")
+   draw_circle(center_x=0, center_y=0, radius={bore_diameter}/2)
+   finish_sketch()
+   extrude(distance={thickness})
+   combine(target_body=0, tool_bodies=[1], operation="cut")
+
+Key tool sequence: create_parameter -> create_sketch -> draw_circle -> extrude (blank) ->
+  create_sketch -> draw tooth profile -> extrude (cut) -> pattern_circular -> bore hole"""
+
+@mcp.prompt()
+def simple_hinge(pin_diameter: str = "0.5", plate_width: str = "4",
+                 plate_height: str = "3", plate_thickness: str = "0.3") -> str:
+    """Generate a step-by-step guide for creating a simple two-plate hinge with a revolute joint."""
+    return f"""Create a simple two-plate hinge:
+- Pin diameter: {pin_diameter} cm, Plate: {plate_width} x {plate_height} x {plate_thickness} cm
+
+REASONING: A hinge requires two separate components connected by a revolute joint.
+The joint axis must align with the pin axis for correct rotation behavior.
+Create each plate as its own component before adding the joint.
+
+Step-by-step workflow:
+
+1. **Create plate 1 (left plate)**
+   create_sketch(plane="XY")
+   draw_rectangle(x1=-{plate_width}/2, y1=0, x2=0, y2={plate_height})
+   finish_sketch()
+   extrude(distance={plate_thickness})
+   create_component(name="hinge_plate_1")
+
+2. **Create knuckle cylinder on plate 1**
+   create_sketch(plane="XZ")
+   draw_circle(center_x=0, center_y={plate_thickness}/2, radius={pin_diameter})
+   finish_sketch()
+   extrude(distance={plate_height} * 0.4)
+   combine(target_body=0, tool_bodies=[1], operation="join")
+   REASONING: The knuckle must be part of the plate component for joint to work correctly.
+
+3. **Create plate 2 (right plate)**
+   create_sketch(plane="XY")
+   draw_rectangle(x1=0, y1=0, x2={plate_width}/2, y2={plate_height})
+   finish_sketch()
+   extrude(distance={plate_thickness})
+   create_component(name="hinge_plate_2")
+
+4. **Create knuckle cylinder on plate 2**
+   create_sketch(plane="XZ")
+   draw_circle(center_x=0, center_y={plate_thickness}/2, radius={pin_diameter})
+   finish_sketch()
+   extrude(distance={plate_height} * 0.4)
+   move_component(y={plate_height} * 0.5, index=1)
+   REASONING: Offset the second knuckle so the two interleave along the hinge axis.
+
+5. **Create revolute joint between plates**
+   create_revolute_joint(component1_index=0, component2_index=1,
+                          x=0, y=0, z=0,
+                          axis_x=0, axis_y=1, axis_z=0)
+   REASONING: Joint axis is Y (vertical along hinge pin). This allows the plates
+   to rotate open/closed around the pin axis.
+
+6. **Test the joint**
+   set_joint_angle(angle=45)
+   REASONING: Verify the hinge opens to 45 degrees correctly.
+
+Key tool sequence: create_sketch -> draw_rectangle -> extrude -> create_component (x2) ->
+  create_revolute_joint -> set_joint_angle"""
 
 # =============================================================================
 # MAIN
