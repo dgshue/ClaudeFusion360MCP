@@ -9,11 +9,31 @@ if _addin_dir not in sys.path:
     sys.path.insert(0, _addin_dir)
 
 from helpers.coordinates import transform_to_sketch_coords, transform_from_sketch_coords
-from helpers.bodies import get_sketch
+from helpers.bodies import get_sketch, get_body
 from helpers.sketch_entities import get_curve_index, find_point_index, get_sketch_curve
+from helpers.selection import resolve_faces
 
 
 def create_sketch(design, rootComp, params):
+    # Check for face-based sketch first
+    face_param = params.get('face')
+    if face_param is not None:
+        body_index = params.get('body_index', 0)
+        try:
+            body = get_body(rootComp, body_index)
+        except (ValueError, IndexError) as e:
+            return {"success": False, "error": str(e)}
+        if isinstance(body, dict) and not body.get('success', True):
+            return body  # Error from get_body
+        faces = resolve_faces(body, [face_param])
+        if not faces:
+            return {"success": False, "error": f"Could not resolve face '{face_param}' on body {body_index}. Use get_body_info() to see available faces."}
+        target_face = faces[0]
+        sketch = rootComp.sketches.add(target_face)
+        sketch.attributes.add('FusionMCP', 'base_plane', 'face')
+        return {"success": True, "sketch_name": sketch.name, "plane": "face", "body_index": body_index, "face": str(face_param)}
+
+    # Existing construction plane logic
     plane_name = params.get('plane', 'XY')
     plane_map = {
         'XY': rootComp.xYConstructionPlane,

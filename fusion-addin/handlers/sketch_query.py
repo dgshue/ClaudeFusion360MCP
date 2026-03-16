@@ -31,6 +31,21 @@ def get_sketch_info(design, rootComp, params):
     except Exception:
         pass
 
+    # Face frame info (for face-based sketches)
+    face_frame = None
+    if plane == 'face':
+        try:
+            origin = sketch.origin
+            x_dir = sketch.xDirection
+            y_dir = sketch.yDirection
+            face_frame = {
+                "origin": [round(origin.x, 4), round(origin.y, 4), round(origin.z, 4)],
+                "x_direction": [round(x_dir.x, 4), round(x_dir.y, 4), round(x_dir.z, 4)],
+                "y_direction": [round(y_dir.x, 4), round(y_dir.y, 4), round(y_dir.z, 4)]
+            }
+        except Exception:
+            pass
+
     # 1. Curves
     curves = []
     fully_constrained_count = 0
@@ -143,7 +158,7 @@ def get_sketch_info(design, rootComp, params):
     else:
         constraint_status = "under-constrained"
 
-    return {
+    result = {
         "success": True,
         "sketch_name": sketch_name,
         "plane": plane,
@@ -160,3 +175,6 @@ def get_sketch_info(design, rootComp, params):
             "constraint_status": constraint_status
         }
     }
+    if face_frame:
+        result["face_frame"] = face_frame
+    return result
