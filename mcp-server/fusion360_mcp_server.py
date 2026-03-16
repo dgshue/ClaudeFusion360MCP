@@ -72,18 +72,21 @@ def send_fusion_command(tool_name: str, params: dict) -> dict:
 @mcp.tool()
 def batch(commands: list) -> dict:
     """
-    Execute multiple Fusion commands in a single call - MUCH faster for complex operations.
-    
-    Example: batch([
-        {"name": "create_sketch", "params": {"plane": "XY"}},
-        {"name": "draw_rectangle", "params": {"x1": -5, "y1": -5, "x2": 5, "y2": 5}},
-        {"name": "draw_circle", "params": {"center_x": 0, "center_y": 0, "radius": 2}},
-        {"name": "finish_sketch", "params": {}},
-        {"name": "extrude", "params": {"distance": 3}}
-    ])
-    
-    This executes all commands in one round-trip instead of 5 separate calls.
-    Stops on first error and returns partial results.
+    Execute multiple Fusion commands in a single round-trip for 5-10x faster complex operations.
+
+    Sends all commands to Fusion 360 at once instead of individual calls.
+    Stops on first error and returns partial results for commands that succeeded.
+
+    Args:
+        commands: List of command dicts, each with "name" (tool name) and "params" (tool parameters).
+
+    Examples:
+        batch(commands=[{"name": "create_sketch", "params": {"plane": "XY"}},
+                        {"name": "draw_rectangle", "params": {"x1": -5, "y1": -5, "x2": 5, "y2": 5}},
+                        {"name": "finish_sketch", "params": {}},
+                        {"name": "extrude", "params": {"distance": 3}}])
+        batch(commands=[{"name": "fillet", "params": {"radius": 0.2, "edges": [0, 1]}},
+                        {"name": "chamfer", "params": {"distance": 0.1, "edges": [4, 5]}}])
     """
     return send_fusion_command("batch", {"commands": commands})
 
@@ -121,7 +124,16 @@ def create_sketch(plane: str = "XY", offset: float = 0, body_index: int = None, 
 
 @mcp.tool()
 def finish_sketch() -> dict:
-    """Exit sketch editing mode"""
+    """
+    Exit sketch editing mode and make the sketch available for 3D operations.
+
+    Must be called after completing all sketch geometry (lines, circles, etc.)
+    before using extrude, revolve, or other features. Only one sketch can be
+    active at a time.
+
+    Examples:
+        finish_sketch()
+    """
     return send_fusion_command("finish_sketch", {})
 
 # =============================================================================
@@ -130,22 +142,80 @@ def finish_sketch() -> dict:
 
 @mcp.tool()
 def draw_rectangle(x1: float, y1: float, x2: float, y2: float) -> dict:
-    """Draw a rectangle in the active sketch (units: cm)"""
+    """
+    Draw a rectangle in the active sketch defined by two opposite corners.
+
+    Creates four line segments forming a closed rectangle profile ready for extrusion.
+
+    Args:
+        x1: First corner X coordinate (cm).
+        y1: First corner Y coordinate (cm).
+        x2: Opposite corner X coordinate (cm).
+        y2: Opposite corner Y coordinate (cm).
+
+    Examples:
+        draw_rectangle(x1=-5, y1=-5, x2=5, y2=5)       # 10x10 cm centered
+        draw_rectangle(x1=0, y1=0, x2=3, y2=2)          # 3x2 cm at origin corner
+    """
     return send_fusion_command("draw_rectangle", {"x1": x1, "y1": y1, "x2": x2, "y2": y2})
 
 @mcp.tool()
 def draw_circle(center_x: float, center_y: float, radius: float) -> dict:
-    """Draw a circle in the active sketch (units: cm)"""
+    """
+    Draw a circle in the active sketch. Creates a closed profile for extrusion or revolution.
+
+    Args:
+        center_x: Center X coordinate (cm).
+        center_y: Center Y coordinate (cm).
+        radius: Circle radius (cm).
+
+    Examples:
+        draw_circle(center_x=0, center_y=0, radius=2.5)    # Centered circle
+        draw_circle(center_x=3, center_y=3, radius=0.5)    # Small circle offset
+    """
     return send_fusion_command("draw_circle", {"center_x": center_x, "center_y": center_y, "radius": radius})
 
 @mcp.tool()
 def draw_line(x1: float, y1: float, x2: float, y2: float) -> dict:
-    """Draw a straight line in the active sketch (units: cm)"""
+    """
+    Draw a straight line segment in the active sketch between two points.
+
+    Lines can form profiles when connected end-to-end. Use constraints to
+    lock orientation (horizontal, vertical, perpendicular).
+
+    Args:
+        x1: Start point X coordinate (cm).
+        y1: Start point Y coordinate (cm).
+        x2: End point X coordinate (cm).
+        y2: End point Y coordinate (cm).
+
+    Examples:
+        draw_line(x1=0, y1=0, x2=5, y2=0)      # Horizontal line
+        draw_line(x1=0, y1=0, x2=0, y2=5)      # Vertical line
+        draw_line(x1=0, y1=0, x2=3, y2=4)      # Diagonal line
+    """
     return send_fusion_command("draw_line", {"x1": x1, "y1": y1, "x2": x2, "y2": y2})
 
 @mcp.tool()
 def draw_arc(center_x: float, center_y: float, start_x: float, start_y: float, end_x: float, end_y: float) -> dict:
-    """Draw an arc in the active sketch (units: cm)"""
+    """
+    Draw an arc in the active sketch defined by center, start, and end points.
+
+    The arc sweeps counter-clockwise from start to end around the center point.
+    Useful for rounded features, cam profiles, and curved transitions.
+
+    Args:
+        center_x: Arc center X coordinate (cm).
+        center_y: Arc center Y coordinate (cm).
+        start_x: Arc start point X coordinate (cm).
+        start_y: Arc start point Y coordinate (cm).
+        end_x: Arc end point X coordinate (cm).
+        end_y: Arc end point Y coordinate (cm).
+
+    Examples:
+        draw_arc(center_x=0, center_y=0, start_x=2, start_y=0, end_x=0, end_y=2)    # Quarter arc
+        draw_arc(center_x=5, center_y=0, start_x=5, start_y=3, end_x=5, end_y=-3)   # Half arc
+    """
     return send_fusion_command("draw_arc", {
         "center_x": center_x, "center_y": center_y,
         "start_x": start_x, "start_y": start_y,
@@ -154,7 +224,22 @@ def draw_arc(center_x: float, center_y: float, start_x: float, start_y: float, e
 
 @mcp.tool()
 def draw_polygon(center_x: float, center_y: float, radius: float, sides: int = 6) -> dict:
-    """Draw a regular polygon in the active sketch (units: cm). Default is hexagon."""
+    """
+    Draw a regular polygon in the active sketch. Default is a hexagon.
+
+    Creates a closed profile with equal-length sides inscribed in a circle of given radius.
+
+    Args:
+        center_x: Polygon center X coordinate (cm).
+        center_y: Polygon center Y coordinate (cm).
+        radius: Circumscribed circle radius (cm) -- distance from center to vertex.
+        sides: Number of sides (default 6 for hexagon). Minimum 3.
+
+    Examples:
+        draw_polygon(center_x=0, center_y=0, radius=3, sides=6)    # Hexagon
+        draw_polygon(center_x=0, center_y=0, radius=2, sides=8)    # Octagon
+        draw_polygon(center_x=0, center_y=0, radius=5, sides=3)    # Triangle
+    """
     return send_fusion_command("draw_polygon", {
         "center_x": center_x, "center_y": center_y, 
         "radius": radius, "sides": sides
@@ -166,12 +251,19 @@ def draw_polygon(center_x: float, center_y: float, radius: float, sides: int = 6
 
 @mcp.tool()
 def set_construction(curve_index: int, is_construction: bool = True) -> dict:
-    """Toggle a sketch curve between regular and construction geometry.
-    Construction geometry is used as reference but not included in profiles.
+    """
+    Toggle a sketch curve between regular and construction geometry.
+
+    Construction geometry serves as reference lines and circles but is not included
+    in profiles for extrusion. Useful for centerlines, layout guides, and symmetry axes.
 
     Args:
         curve_index: Index of the curve to toggle. Use get_sketch_info() to see available curves.
         is_construction: True to make construction, False to make regular. Default True.
+
+    Examples:
+        set_construction(curve_index=0)                         # Make curve 0 construction
+        set_construction(curve_index=2, is_construction=False)  # Revert to regular
     """
     return send_fusion_command("set_construction", {
         "curve_index": curve_index,
@@ -184,25 +276,38 @@ def set_construction(curve_index: int, is_construction: bool = True) -> dict:
 
 @mcp.tool()
 def draw_spline(points: list) -> dict:
-    """Draw a fitted spline through a collection of points in the active sketch.
+    """
+    Draw a fitted spline through a collection of points in the active sketch.
+
+    Creates a smooth curve passing through all specified points. Useful for organic
+    shapes, airfoil profiles, and ergonomic contours.
 
     Args:
         points: List of [x, y] coordinate pairs (minimum 2 points). Units: cm.
 
-    Example: draw_spline(points=[[0,0], [2,3], [5,1], [8,4]])
+    Examples:
+        draw_spline(points=[[0,0], [2,3], [5,1], [8,4]])          # 4-point curve
+        draw_spline(points=[[0,0], [5,2], [10,0]])                # Simple arc-like
     """
     return send_fusion_command("draw_spline", {"points": points})
 
 @mcp.tool()
 def draw_ellipse(center_x: float, center_y: float, major_radius: float, minor_radius: float, angle: float = 0) -> dict:
-    """Draw an ellipse in the active sketch (units: cm).
+    """
+    Draw an ellipse in the active sketch defined by center, radii, and rotation.
+
+    Creates an oval profile for extrusion. The major axis is the longer radius.
 
     Args:
-        center_x: Center X coordinate
-        center_y: Center Y coordinate
-        major_radius: Semi-major axis length
-        minor_radius: Semi-minor axis length
-        angle: Rotation angle of major axis in degrees (default 0)
+        center_x: Center X coordinate (cm).
+        center_y: Center Y coordinate (cm).
+        major_radius: Semi-major axis length (cm) -- the longer radius.
+        minor_radius: Semi-minor axis length (cm) -- the shorter radius.
+        angle: Rotation angle of major axis in degrees (default 0).
+
+    Examples:
+        draw_ellipse(center_x=0, center_y=0, major_radius=5, minor_radius=3)
+        draw_ellipse(center_x=0, center_y=0, major_radius=4, minor_radius=2, angle=45)
     """
     return send_fusion_command("draw_ellipse", {
         "center_x": center_x, "center_y": center_y,
@@ -212,15 +317,22 @@ def draw_ellipse(center_x: float, center_y: float, major_radius: float, minor_ra
 
 @mcp.tool()
 def draw_slot(center_x: float, center_y: float, end_x: float, end_y: float, width: float) -> dict:
-    """Draw a center-point slot in the active sketch (units: cm).
-    A slot is a rounded rectangle defined by center, end point, and width.
+    """
+    Draw a center-point slot in the active sketch.
+
+    A slot is a rounded rectangle (stadium shape) defined by its center, one end point,
+    and width. Commonly used for mounting holes and adjustable fastener positions.
 
     Args:
-        center_x: Slot center X
-        center_y: Slot center Y
-        end_x: End point X (defines slot length/direction)
-        end_y: End point Y
-        width: Slot width (perpendicular to length direction)
+        center_x: Slot center X coordinate (cm).
+        center_y: Slot center Y coordinate (cm).
+        end_x: End point X (cm) -- defines slot length and direction from center.
+        end_y: End point Y (cm).
+        width: Slot width perpendicular to length direction (cm).
+
+    Examples:
+        draw_slot(center_x=0, center_y=0, end_x=3, end_y=0, width=1)    # Horizontal slot
+        draw_slot(center_x=0, center_y=0, end_x=0, end_y=2, width=0.5)  # Vertical slot
     """
     return send_fusion_command("draw_slot", {
         "center_x": center_x, "center_y": center_y,
@@ -229,24 +341,40 @@ def draw_slot(center_x: float, center_y: float, end_x: float, end_y: float, widt
 
 @mcp.tool()
 def draw_point(x: float, y: float) -> dict:
-    """Add a reference/construction point to the active sketch (units: cm).
+    """
+    Add a reference or construction point to the active sketch.
+
+    Points serve as reference locations for constraints, dimensions, and hole positioning.
+    They do not create profiles for extrusion.
 
     Args:
-        x: Point X coordinate
-        y: Point Y coordinate
+        x: Point X coordinate (cm).
+        y: Point Y coordinate (cm).
+
+    Examples:
+        draw_point(x=0, y=0)           # Point at origin
+        draw_point(x=3, y=4)           # Offset point
     """
     return send_fusion_command("draw_point", {"x": x, "y": y})
 
 @mcp.tool()
 def draw_text(text: str, height: float, x: float = 0, y: float = 0, font: str = None) -> dict:
-    """Draw text in the active sketch. Text profiles can be extruded for embossing/engraving.
+    """
+    Draw text in the active sketch. Text profiles can be extruded for embossing or engraving.
+
+    Creates sketch text that generates closed profiles suitable for extrusion.
+    Use positive extrude for raised text (emboss) or negative/cut for engraved text.
 
     Args:
-        text: The text string to draw
-        height: Text height in cm
-        x: Text position X (default 0)
-        y: Text position Y (default 0)
-        font: Font name (optional, uses system default)
+        text: The text string to draw.
+        height: Text height (cm).
+        x: Text position X coordinate (cm). Default 0.
+        y: Text position Y coordinate (cm). Default 0.
+        font: Font name (optional, uses system default if omitted).
+
+    Examples:
+        draw_text(text="HELLO", height=1.0)                          # Default position
+        draw_text(text="V1.0", height=0.5, x=2, y=1, font="Arial")  # Positioned with font
     """
     params = {"text": text, "height": height, "x": x, "y": y}
     if font is not None:
@@ -259,15 +387,21 @@ def draw_text(text: str, height: float, x: float = 0, y: float = 0, font: str = 
 
 @mcp.tool()
 def offset_curves(curve_index: int, distance: float, direction_x: float = 0, direction_y: float = 1) -> dict:
-    """Create offset curves parallel to existing sketch geometry at a uniform distance.
+    """
+    Create offset curves parallel to existing sketch geometry at a uniform distance.
+
+    Offsets a curve (and connected curves) to create parallel geometry. Useful for
+    creating wall outlines, clearance paths, and concentric shapes.
 
     Args:
-        curve_index: Index of a curve to offset (connected curves are included automatically)
-        distance: Offset distance in cm
-        direction_x: X component of offset direction (default 0)
-        direction_y: Y component of offset direction (default 1)
+        curve_index: Index of a curve to offset (connected curves are included automatically).
+        distance: Offset distance (cm).
+        direction_x: X component of offset direction (default 0).
+        direction_y: Y component of offset direction (default 1).
 
-    Use get_sketch_info() to see available curve indices.
+    Examples:
+        offset_curves(curve_index=0, distance=0.5)                          # Offset outward
+        offset_curves(curve_index=0, distance=0.3, direction_x=1, direction_y=0)  # Offset right
     """
     return send_fusion_command("offset_curves", {
         "curve_index": curve_index, "distance": distance,
@@ -276,15 +410,21 @@ def offset_curves(curve_index: int, distance: float, direction_x: float = 0, dir
 
 @mcp.tool()
 def project_geometry(body_index: int = 0, edge_index: int = None, face_index: int = None) -> dict:
-    """Project body edges or faces onto the active sketch plane.
+    """
+    Project body edges or faces onto the active sketch plane.
+
+    Creates sketch curves from 3D body geometry. Useful for creating profiles that
+    reference existing features, or for sketching relative to body edges.
 
     Args:
-        body_index: Which body to project from (default 0)
-        edge_index: Specific edge index to project (optional)
-        face_index: Specific face index to project (optional)
+        body_index: Which body to project from (default 0).
+        edge_index: Specific edge index to project (optional).
+        face_index: Specific face index to project (optional).
 
-    If neither edge_index nor face_index provided, projects all edges.
-    Use get_body_info() to see available edge/face indices.
+    Examples:
+        project_geometry()                                   # Project all edges of body 0
+        project_geometry(body_index=0, edge_index=3)         # Project specific edge
+        project_geometry(body_index=1, face_index=0)         # Project a face outline
     """
     params = {"body_index": body_index}
     if edge_index is not None:
@@ -295,13 +435,21 @@ def project_geometry(body_index: int = 0, edge_index: int = None, face_index: in
 
 @mcp.tool()
 def import_svg(file_path: str, x: float = 0, y: float = 0, scale: float = 1.0) -> dict:
-    """Import an SVG file into the active sketch. Uses Fusion 360's native SVG import.
+    """
+    Import an SVG file into the active sketch using Fusion 360's native SVG import.
+
+    Converts SVG vector paths into sketch curves. Useful for importing logos,
+    custom profiles, and complex 2D shapes for extrusion.
 
     Args:
-        file_path: Full path to the SVG file
-        x: X position for import origin (default 0)
-        y: Y position for import origin (default 0)
-        scale: Scale factor (default 1.0 = native SVG dimensions)
+        file_path: Full absolute path to the SVG file on disk.
+        x: X position for import origin (cm). Default 0.
+        y: Y position for import origin (cm). Default 0.
+        scale: Scale factor (default 1.0 = native SVG dimensions).
+
+    Examples:
+        import_svg(file_path="C:/designs/logo.svg")
+        import_svg(file_path="C:/designs/profile.svg", x=2, y=3, scale=0.5)
     """
     return send_fusion_command("import_svg", {
         "file_path": file_path, "x": x, "y": y, "scale": scale
@@ -316,12 +464,19 @@ def construction_plane(mode: str = "offset", plane: str = "XY", offset: float = 
     """
     Create a construction (reference) plane for sketching or feature operations.
 
+    Construction planes provide additional sketch surfaces beyond the three default
+    planes. Use offset mode for parallel planes, angle mode for tilted surfaces.
+
     Args:
-        mode: Creation mode - "offset" (parallel to base plane) or "angle" (rotated around axis)
-        plane: Base plane - "XY", "XZ", or "YZ" (default "XY")
-        offset: Distance from base plane in cm (used in offset mode, default 1.0)
-        axis: Rotation axis for angle mode - "X", "Y", or "Z" (default "X")
-        angle: Rotation angle in degrees (used in angle mode, default 45.0)
+        mode: Creation mode -- "offset" (parallel to base plane) or "angle" (rotated around axis).
+        plane: Base plane -- "XY", "XZ", or "YZ" (default "XY").
+        offset: Distance from base plane (cm). Used in offset mode. Default 1.0.
+        axis: Rotation axis for angle mode -- "X", "Y", or "Z" (default "X").
+        angle: Rotation angle (degrees). Used in angle mode. Default 45.0.
+
+    Examples:
+        construction_plane(mode="offset", plane="XY", offset=5)        # 5cm above XY
+        construction_plane(mode="angle", plane="XY", axis="X", angle=30)  # Tilted 30 deg
     """
     params = {"mode": mode, "plane": plane, "offset": offset, "axis": axis, "angle": angle}
     return send_fusion_command("construction_plane", params)
@@ -331,14 +486,21 @@ def construction_axis(mode: str = "two_points", point1_x: float = 0, point1_y: f
     """
     Create a construction (reference) axis for patterns, revolves, or other operations.
 
+    Defines a line in 3D space from two points. Use for custom rotation axes in
+    circular patterns, revolve operations, or as reference geometry.
+
     Args:
-        mode: Creation mode - "two_points" (default)
-        point1_x: First point X coordinate in cm (default 0)
-        point1_y: First point Y coordinate in cm (default 0)
-        point1_z: First point Z coordinate in cm (default 0)
-        point2_x: Second point X coordinate in cm (default 0)
-        point2_y: Second point Y coordinate in cm (default 0)
-        point2_z: Second point Z coordinate in cm (default 1.0)
+        mode: Creation mode -- "two_points" (default).
+        point1_x: First point X coordinate (cm). Default 0.
+        point1_y: First point Y coordinate (cm). Default 0.
+        point1_z: First point Z coordinate (cm). Default 0.
+        point2_x: Second point X coordinate (cm). Default 0.
+        point2_y: Second point Y coordinate (cm). Default 0.
+        point2_z: Second point Z coordinate (cm). Default 1.0.
+
+    Examples:
+        construction_axis()                                              # Default Z-axis
+        construction_axis(point1_x=0, point1_y=0, point1_z=0, point2_x=1, point2_y=1, point2_z=0)  # Diagonal axis
     """
     params = {
         "mode": mode,
@@ -350,12 +512,19 @@ def construction_axis(mode: str = "two_points", point1_x: float = 0, point1_y: f
 @mcp.tool()
 def construction_point(x: float = 0, y: float = 0, z: float = 0) -> dict:
     """
-    Create a construction (reference) point for positioning holes, patterns, or other features.
+    Create a construction (reference) point in 3D space.
+
+    Construction points serve as positioning references for holes, patterns,
+    and other features that need a specific location in the design.
 
     Args:
-        x: X coordinate in cm (default 0)
-        y: Y coordinate in cm (default 0)
-        z: Z coordinate in cm (default 0)
+        x: X coordinate (cm). Default 0.
+        y: Y coordinate (cm). Default 0.
+        z: Z coordinate (cm). Default 0.
+
+    Examples:
+        construction_point(x=5, y=0, z=0)           # Point on X axis
+        construction_point(x=2, y=3, z=4)           # Arbitrary 3D point
     """
     return send_fusion_command("construction_point", {"x": x, "y": y, "z": z})
 
@@ -375,19 +544,22 @@ def hole(diameter: float, depth: float = None, hole_type: str = "simple",
     If depth is omitted, creates a through-all hole.
 
     Args:
-        diameter: Hole diameter in cm
-        depth: Hole depth in cm (omit for through-all)
-        hole_type: "simple", "counterbore", or "countersink" (default "simple")
-        x: X position on face in cm (default 0)
-        y: Y position on face in cm (default 0)
-        face: Face index for hole placement (default: top face)
-        body_index: Which body (default: most recent)
-        counterbore_diameter: Counterbore diameter in cm (required for counterbore type)
-        counterbore_depth: Counterbore depth in cm (required for counterbore type)
-        countersink_diameter: Countersink diameter in cm (required for countersink type)
-        countersink_angle: Countersink angle in degrees (default 82)
+        diameter: Hole diameter (cm).
+        depth: Hole depth (cm). Omit for through-all.
+        hole_type: "simple", "counterbore", or "countersink" (default "simple").
+        x: X position on face (cm). Default 0.
+        y: Y position on face (cm). Default 0.
+        face: Face index for hole placement (default: top face). Use get_body_info() to find.
+        body_index: Which body (default: most recent).
+        counterbore_diameter: Counterbore diameter (cm). Required for counterbore type.
+        counterbore_depth: Counterbore depth (cm). Required for counterbore type.
+        countersink_diameter: Countersink diameter (cm). Required for countersink type.
+        countersink_angle: Countersink angle (degrees). Default 82.
 
-    Use get_body_info() to find face indices.
+    Examples:
+        hole(diameter=0.5, depth=1.0)                                         # Simple 5mm hole
+        hole(diameter=0.3)                                                    # Through-all hole
+        hole(diameter=0.5, depth=1.0, hole_type="counterbore", counterbore_diameter=0.8, counterbore_depth=0.3)
     """
     params = {"diameter": diameter, "hole_type": hole_type, "x": x, "y": y,
               "countersink_angle": countersink_angle}
@@ -417,14 +589,19 @@ def thread(face: int, body_index: int = None, thread_type: str = "ISO Metric pro
     M3x0.5, M4x0.7, M5x0.8, M6x1.0, M8x1.25, M10x1.5, M12x1.75
 
     Args:
-        face: Face index of the cylindrical face to thread (use get_body_info() to find)
-        body_index: Which body (default: most recent)
-        thread_type: Thread standard (default "ISO Metric profile")
-        designation: Thread size designation (default "M6x1.0")
-        thread_class: Thread tolerance class (default "6g" for external, use "6H" for internal)
-        is_internal: True for internal threads (holes), False for external (default False)
-        full_length: Thread the full length of the face (default True)
-        length: Thread length in cm (used when full_length is False)
+        face: Face index of the cylindrical face to thread. Use get_body_info() to find.
+        body_index: Which body (default: most recent).
+        thread_type: Thread standard (default "ISO Metric profile").
+        designation: Thread size designation (default "M6x1.0").
+        thread_class: Thread tolerance class (default "6g" external, "6H" internal).
+        is_internal: True for internal threads (holes), False for external. Default False.
+        full_length: Thread the full length of the face. Default True.
+        length: Thread length (cm). Used when full_length is False.
+
+    Examples:
+        thread(face=2)                                                    # M6 external thread
+        thread(face=0, designation="M3x0.5", is_internal=True, thread_class="6H")  # Internal M3
+        thread(face=1, full_length=False, length=1.0)                    # Partial thread
     """
     params = {"face": face, "thread_type": thread_type,
               "designation": designation, "thread_class": thread_class,
@@ -442,12 +619,21 @@ def thread(face: int, body_index: int = None, thread_type: str = "ISO Metric pro
 @mcp.tool()
 def extrude(distance: float, profile_index: int = 0, taper_angle: float = 0) -> dict:
     """
-    Extrude the most recent sketch profile (units: cm).
-    
+    Extrude the most recent sketch profile into a 3D solid body.
+
+    Positive distance extrudes upward (along plane normal), negative downward.
+    Use taper_angle for tapered extrusions (draft). Use profile_index when a
+    sketch contains multiple closed regions.
+
     Args:
-        distance: Extrusion distance (positive or negative)
-        profile_index: Which profile if multiple exist (default 0)
-        taper_angle: Draft angle during extrusion in degrees (default 0)
+        distance: Extrusion distance (cm). Positive = normal direction, negative = opposite.
+        profile_index: Which profile if sketch has multiple closed regions (default 0).
+        taper_angle: Draft angle during extrusion (degrees). Default 0.
+
+    Examples:
+        extrude(distance=3)                                    # Simple 3cm extrude
+        extrude(distance=-2, profile_index=1)                  # Downward, second profile
+        extrude(distance=5, taper_angle=3)                     # Tapered extrude
     """
     return send_fusion_command("extrude", {
         "distance": distance, 
@@ -458,11 +644,19 @@ def extrude(distance: float, profile_index: int = 0, taper_angle: float = 0) -> 
 @mcp.tool()
 def revolve(angle: float, axis: str = "Y") -> dict:
     """
-    Revolve the most recent sketch profile around an axis (degrees).
+    Revolve the most recent sketch profile around an axis to create rotational solids.
+
+    Creates bodies like cylinders, cones, donuts, and bowls. The sketch profile
+    must be on one side of the axis (no crossing). Use 360 for full revolution.
 
     Args:
-        angle: Revolve angle in degrees (360 for full revolution)
-        axis: Revolve axis - "X", "Y", or "Z" (default "Y")
+        angle: Revolve angle (degrees). 360 for full revolution.
+        axis: Revolve axis -- "X", "Y", or "Z" (default "Y").
+
+    Examples:
+        revolve(angle=360)                         # Full revolution around Y
+        revolve(angle=180, axis="X")               # Half revolution around X
+        revolve(angle=90, axis="Z")                # Quarter turn around Z
     """
     return send_fusion_command("revolve", {"angle": angle, "axis": axis})
 
@@ -478,13 +672,18 @@ def sweep(profile_sketch_index: int = None, profile_index: int = 0,
     Default behavior: uses second-to-last sketch for profile, last sketch for path.
 
     Args:
-        profile_sketch_index: Sketch containing the profile (default: second-to-last sketch)
-        profile_index: Which profile in the sketch (default 0)
-        path_sketch_index: Sketch containing the path curve (default: last sketch)
-        path_curve_index: Which curve to use as path (default 0)
-        taper_angle: Taper angle in degrees during sweep (default 0)
-        twist_angle: Twist angle in degrees along sweep (default 0)
-        operation: "new", "join", "cut", or "intersect" (default "new")
+        profile_sketch_index: Sketch containing the profile (default: second-to-last sketch).
+        profile_index: Which profile in the sketch (default 0).
+        path_sketch_index: Sketch containing the path curve (default: last sketch).
+        path_curve_index: Which curve to use as path (default 0).
+        taper_angle: Taper angle (degrees) during sweep. Default 0.
+        twist_angle: Twist angle (degrees) along sweep. Default 0.
+        operation: "new", "join", "cut", or "intersect" (default "new").
+
+    Examples:
+        sweep()                                                    # Default: profile in second-to-last sketch, path in last
+        sweep(profile_sketch_index=0, path_sketch_index=1)         # Explicit sketch indices
+        sweep(twist_angle=90, operation="join")                    # Twisted sweep, joined to existing body
     """
     params = {
         "profile_index": profile_index,
@@ -510,11 +709,16 @@ def loft(sketch_indices: list, profile_indices: list = None,
     Use construction_plane() to create offset planes for multi-section lofts.
 
     Args:
-        sketch_indices: List of sketch indices containing profiles (minimum 2, order matters)
-        profile_indices: List of profile indices per sketch (default [0, 0, ...])
-        is_solid: Create solid body (True) or surface (False) (default True)
-        is_closed: Close the loft (connect last section to first) (default False)
-        operation: "new", "join", "cut", or "intersect" (default "new")
+        sketch_indices: List of sketch indices containing profiles (minimum 2, order matters).
+        profile_indices: List of profile indices per sketch (default [0, 0, ...]).
+        is_solid: Create solid body (True) or surface (False). Default True.
+        is_closed: Close the loft (connect last section to first). Default False.
+        operation: "new", "join", "cut", or "intersect" (default "new").
+
+    Examples:
+        loft(sketch_indices=[0, 1])                            # Loft between two sketches
+        loft(sketch_indices=[0, 1, 2], is_closed=True)         # Closed 3-section loft
+        loft(sketch_indices=[0, 1], is_solid=False)            # Surface loft
     """
     params = {
         "sketch_indices": sketch_indices,
@@ -529,14 +733,20 @@ def loft(sketch_indices: list, profile_indices: list = None,
 @mcp.tool()
 def fillet(radius: float, edges: list = None, body_index: int = None) -> dict:
     """
-    Add fillets to edges of a body (units: cm).
-    
+    Add fillets (rounded edges) to a body. Use to smooth sharp edges.
+
+    Fillets improve appearance, reduce stress concentrations, and are required
+    for many manufacturing processes.
+
     Args:
-        radius: Fillet radius
-        edges: Optional list of edge indices. If None, fillets all edges.
-        body_index: Which body (default: most recent)
-    
-    Use get_body_info() to see available edge indices.
+        radius: Fillet radius (cm).
+        edges: List of edge indices to fillet. If None, fillets all edges.
+        body_index: Which body (default: most recent).
+
+    Examples:
+        fillet(radius=0.2)                                  # Fillet all edges
+        fillet(radius=0.5, edges=[0, 1, 2])                 # Fillet specific edges
+        fillet(radius=0.1, body_index=0)                    # Fillet body 0
     """
     params = {"radius": radius}
     if edges is not None:
@@ -548,14 +758,20 @@ def fillet(radius: float, edges: list = None, body_index: int = None) -> dict:
 @mcp.tool()
 def chamfer(distance: float, edges: list = None, body_index: int = None) -> dict:
     """
-    Add chamfers to edges of a body (units: cm).
-    
+    Add chamfers (angled cuts) to edges of a body.
+
+    Chamfers create flat beveled edges, often used for lead-in on holes,
+    deburring, and decorative styling.
+
     Args:
-        distance: Chamfer distance
-        edges: Optional list of edge indices. If None, chamfers all edges.
-        body_index: Which body (default: most recent)
-    
-    Use get_body_info() to see available edge indices.
+        distance: Chamfer distance (cm) -- the setback from the edge.
+        edges: List of edge indices to chamfer. If None, chamfers all edges.
+        body_index: Which body (default: most recent).
+
+    Examples:
+        chamfer(distance=0.1)                                # Chamfer all edges
+        chamfer(distance=0.3, edges=[4, 5])                  # Chamfer specific edges
+        chamfer(distance=0.2, body_index=1)                  # Chamfer body 1
     """
     params = {"distance": distance}
     if edges is not None:
@@ -595,13 +811,23 @@ def shell(thickness: float, faces_to_remove: list = None, body_index: int = None
 def draft(angle: float, faces: list = None, body_index: int = None, 
           pull_x: float = 0, pull_y: float = 0, pull_z: float = 1) -> dict:
     """
-    Apply draft angles to faces for injection molding (angle in degrees).
-    
+    Apply draft angles to faces for injection molding release.
+
+    Adds a slight taper to faces so parts can be pulled from molds cleanly.
+    Guideline: 1 degree per inch of depth. Typical range: 0.5-3 degrees.
+
     Args:
-        angle: Draft angle (typically 0.5-3 degrees, guideline: 1 degree per inch)
-        faces: List of face indices. If None, drafts all faces.
-        body_index: Which body (default: most recent)
-        pull_x, pull_y, pull_z: Pull direction vector (default: +Z)
+        angle: Draft angle (degrees). Typically 0.5-3 degrees.
+        faces: List of face indices to draft. If None, drafts all eligible faces.
+        body_index: Which body (default: most recent).
+        pull_x: Pull direction X component. Default 0.
+        pull_y: Pull direction Y component. Default 0.
+        pull_z: Pull direction Z component. Default 1 (+Z).
+
+    Examples:
+        draft(angle=1.5)                                    # Draft all faces at 1.5 deg
+        draft(angle=2, faces=[1, 3])                        # Draft specific faces
+        draft(angle=1, pull_x=0, pull_y=0, pull_z=-1)      # Pull direction: -Z
     """
     params = {"angle": angle, "pull_x": pull_x, "pull_y": pull_y, "pull_z": pull_z}
     if faces is not None:
@@ -656,11 +882,19 @@ def pattern_circular(count: int, angle: float = 360, axis: str = "Z", body_index
 @mcp.tool()
 def mirror(plane: str = "YZ", body_index: int = None) -> dict:
     """
-    Create a mirrored copy of a body.
-    
+    Create a mirrored copy of a body across a plane.
+
+    Produces a symmetric duplicate on the opposite side of the mirror plane.
+    Useful for creating symmetric designs by modeling half and mirroring.
+
     Args:
-        plane: Mirror plane - "XY", "XZ", or "YZ" (default "YZ" for left-right symmetry)
-        body_index: Which body (default: most recent)
+        plane: Mirror plane -- "XY", "XZ", or "YZ" (default "YZ" for left-right symmetry).
+        body_index: Which body to mirror (default: most recent).
+
+    Examples:
+        mirror(plane="YZ")                         # Left-right mirror
+        mirror(plane="XZ")                         # Front-back mirror
+        mirror(plane="XY", body_index=0)           # Top-bottom mirror of body 0
     """
     params = {"plane": plane}
     if body_index is not None:
@@ -673,12 +907,29 @@ def mirror(plane: str = "YZ", body_index: int = None) -> dict:
 
 @mcp.tool()
 def fit_view() -> dict:
-    """Fit the viewport to show all geometry"""
+    """
+    Fit the viewport to show all geometry in the current design.
+
+    Adjusts the camera to frame all visible bodies and sketches. Useful after
+    creating or positioning geometry to see the full result.
+
+    Examples:
+        fit_view()
+    """
     return send_fusion_command("fit_view", {})
 
 @mcp.tool()
 def get_design_info() -> dict:
-    """Get information about the current design (name, body count, sketch count, component count, active sketch status)"""
+    """
+    Get overview information about the current Fusion 360 design.
+
+    Returns the design name, body count, sketch count, component count, and
+    whether a sketch is currently active. Use as a starting point to understand
+    the design state before performing operations.
+
+    Examples:
+        get_design_info()
+    """
     return send_fusion_command("get_design_info", {})
 
 # =============================================================================
@@ -688,13 +939,18 @@ def get_design_info() -> dict:
 @mcp.tool()
 def get_body_info(body_index: int = None) -> dict:
     """
-    Get detailed information about a body including all edges and faces.
-    
+    Get detailed information about a body including all edges, faces, and semantic labels.
+
+    Returns edge indices with lengths, face indices with areas and semantic labels
+    (e.g., "top_face", "bottom_face"). Essential for finding indices before applying
+    fillet, chamfer, shell, draft, hole, or thread operations.
+
     Args:
-        body_index: Which body (default: most recent)
-    
-    Returns edge indices with lengths, face indices with areas.
-    Use this to find indices for selective fillet, chamfer, shell, or draft.
+        body_index: Which body to inspect (default: most recent).
+
+    Examples:
+        get_body_info()                    # Inspect most recent body
+        get_body_info(body_index=0)        # Inspect first body
     """
     params = {}
     if body_index is not None:
@@ -703,21 +959,19 @@ def get_body_info(body_index: int = None) -> dict:
 
 @mcp.tool()
 def get_sketch_info() -> dict:
-    """Get detailed information about the active sketch including all curves, points, constraints, and dimensions.
+    """
+    Get detailed information about the active sketch including all curves, points, constraints, and dimensions.
 
     Returns curves with semantic labels (e.g., "Curve 0 (line, horizontal, 5cm)"),
     points with coordinates, geometric constraints, parametric dimensions, and
-    overall constraint status.
+    overall constraint status. Essential for finding indices before applying
+    constraints, dimensions, or other sketch operations.
 
-    This is the primary tool for understanding sketch state before applying
-    constraints, dimensions, or other operations. Similar to get_body_info for 3D bodies.
+    Args:
+        (none)
 
-    Example workflow:
-        1. create_sketch(plane="XY")
-        2. draw_line(...), draw_circle(...)
-        3. get_sketch_info()  # see all entities with indices
-        4. constrain_horizontal(curve_index=0)
-        5. dimension_distance(value=5, curve_index=0)
+    Examples:
+        get_sketch_info()     # Inspect active sketch entities and constraint status
     """
     return send_fusion_command("get_sketch_info", {})
 
@@ -725,18 +979,21 @@ def get_sketch_info() -> dict:
 def measure(type: str = "body", body_index: int = None,
             edge_index: int = None, face_index: int = None) -> dict:
     """
-    Measure dimensions of bodies, edges, or faces.
-    
+    Measure dimensions of bodies, edges, or faces for verification and inspection.
+
+    Returns physical measurements: volume and surface area for bodies, length for
+    edges, area for faces. Use to verify design dimensions match intent.
+
     Args:
-        type: What to measure - "body", "edge", or "face"
-        body_index: Which body (default: most recent)
-        edge_index: Edge index (for type="edge")
-        face_index: Face index (for type="face")
-    
-    Returns:
-        body: volume, surface_area, bounding_box with size
-        edge: length
-        face: area
+        type: What to measure -- "body", "edge", or "face".
+        body_index: Which body (default: most recent).
+        edge_index: Edge index (required for type="edge"). Use get_body_info() to find.
+        face_index: Face index (required for type="face"). Use get_body_info() to find.
+
+    Examples:
+        measure(type="body")                                # Measure body volume/area
+        measure(type="edge", edge_index=0)                  # Measure edge length
+        measure(type="face", face_index=2, body_index=0)    # Measure face area
     """
     params = {"type": type}
     if body_index is not None:
@@ -753,7 +1010,19 @@ def measure(type: str = "body", body_index: int = None,
 
 @mcp.tool()
 def create_component(name: str = None) -> dict:
-    """Convert the most recent body into a new component for assembly"""
+    """
+    Convert the most recent body into a new component for assembly.
+
+    Components are required for joints and assembly operations. Each component
+    can be independently positioned and connected via joints.
+
+    Args:
+        name: Component name (optional). Auto-generated if omitted.
+
+    Examples:
+        create_component(name="bracket")         # Named component
+        create_component()                       # Auto-named component
+    """
     params = {}
     if name:
         params["name"] = name
@@ -761,12 +1030,33 @@ def create_component(name: str = None) -> dict:
 
 @mcp.tool()
 def list_components() -> dict:
-    """List all components with names, positions, and bounding boxes"""
+    """
+    List all components in the design with names, positions, and bounding boxes.
+
+    Returns component indices needed for move_component, rotate_component, and
+    joint creation. Shows current position and size of each component.
+
+    Examples:
+        list_components()
+    """
     return send_fusion_command("list_components", {})
 
 @mcp.tool()
 def delete_component(name: str = None, index: int = None) -> dict:
-    """Delete a component by name or index"""
+    """
+    Delete a component from the design by name or index.
+
+    Removes the component and its associated bodies from the design.
+    Provide either name or index, not both.
+
+    Args:
+        name: Component name to delete (optional).
+        index: Component index to delete (optional). Use list_components() to find.
+
+    Examples:
+        delete_component(name="bracket")         # Delete by name
+        delete_component(index=1)                # Delete by index
+    """
     params = {}
     if name:
         params["name"] = name
@@ -776,7 +1066,15 @@ def delete_component(name: str = None, index: int = None) -> dict:
 
 @mcp.tool()
 def check_interference() -> dict:
-    """Check if any components overlap (bounding box collision detection)"""
+    """
+    Check if any components overlap using bounding box collision detection.
+
+    Scans all component pairs and reports any that have overlapping bounding boxes.
+    Useful after positioning components to verify no unintended intersections.
+
+    Examples:
+        check_interference()
+    """
     return send_fusion_command("check_interference", {})
 
 # =============================================================================
@@ -788,19 +1086,23 @@ def move_component(x: float = 0, y: float = 0, z: float = 0,
                    index: int = None, name: str = None, 
                    absolute: bool = True) -> dict:
     """
-    Move a component to a new position (units: cm).
-    
+    Move a component to a new position or by an offset.
+
+    CRITICAL: Use this to position components after creation to avoid overlaps.
+    In absolute mode, sets the component's world position. In relative mode,
+    adds the offset to the current position.
+
     Args:
-        x, y, z: Target position or offset
-        index: Component index (from list_components)
-        name: Component name (alternative to index)
-        absolute: If True, set absolute position. If False, move by offset.
-    
+        x: X target position or offset (cm). Default 0.
+        y: Y target position or offset (cm). Default 0.
+        z: Z target position or offset (cm). Default 0.
+        index: Component index (from list_components). Optional.
+        name: Component name (alternative to index). Optional.
+        absolute: If True, set absolute position. If False, move by offset. Default True.
+
     Examples:
         move_component(x=0, y=10, z=0, index=1)                    # Move to Y=10
         move_component(x=5, y=0, z=0, index=0, absolute=False)     # Move 5cm in X
-    
-    CRITICAL: Use this to position components after creation to avoid overlaps.
     """
     params = {"x": x, "y": y, "z": z, "absolute": absolute}
     if index is not None:
@@ -814,14 +1116,24 @@ def rotate_component(angle: float, axis: str = "Z",
                      index: int = None, name: str = None,
                      origin_x: float = 0, origin_y: float = 0, origin_z: float = 0) -> dict:
     """
-    Rotate a component around an axis (angle in degrees).
-    
+    Rotate a component around an axis at a specified origin point.
+
+    Rotates the component in-place around the given axis. Use origin parameters
+    to set the pivot point for rotation.
+
     Args:
-        angle: Rotation angle in degrees
-        axis: Rotation axis - "X", "Y", or "Z" (default "Z")
-        index: Component index (from list_components)
-        name: Component name (alternative to index)
-        origin_x, origin_y, origin_z: Rotation origin point (cm)
+        angle: Rotation angle (degrees).
+        axis: Rotation axis -- "X", "Y", or "Z" (default "Z").
+        index: Component index (from list_components). Optional.
+        name: Component name (alternative to index). Optional.
+        origin_x: Rotation origin X coordinate (cm). Default 0.
+        origin_y: Rotation origin Y coordinate (cm). Default 0.
+        origin_z: Rotation origin Z coordinate (cm). Default 0.
+
+    Examples:
+        rotate_component(angle=90, axis="Z", index=0)                     # Rotate 90 deg around Z
+        rotate_component(angle=45, axis="Y", name="bracket")              # Rotate by name
+        rotate_component(angle=180, axis="X", index=1, origin_x=5)       # Rotate around offset origin
     """
     params = {
         "angle": angle, "axis": axis,
@@ -846,7 +1158,29 @@ def create_revolute_joint(
     min_angle: float = None, max_angle: float = None,
     flip: bool = False
 ) -> dict:
-    """Create a revolute (rotating) joint between two components"""
+    """
+    Create a revolute (rotating) joint between two components. Allows rotation around one axis.
+
+    Used for hinges, doors, wheels, and any single-axis rotation. The joint position
+    defines the pivot point; the axis defines the rotation direction.
+
+    Args:
+        component1_index: First component index (from list_components). Default: auto-detect.
+        component2_index: Second component index. Default: auto-detect.
+        x: Joint position X coordinate (cm). Default 0.
+        y: Joint position Y coordinate (cm). Default 0.
+        z: Joint position Z coordinate (cm). Default 0.
+        axis_x: Rotation axis X component. Default 0.
+        axis_y: Rotation axis Y component. Default 0.
+        axis_z: Rotation axis Z component. Default 1 (Z-axis rotation).
+        min_angle: Minimum rotation limit (degrees). Optional.
+        max_angle: Maximum rotation limit (degrees). Optional.
+        flip: Reverse rotation direction. Default False.
+
+    Examples:
+        create_revolute_joint(component1_index=0, component2_index=1, x=0, y=0, z=0)
+        create_revolute_joint(component1_index=0, component2_index=1, axis_x=0, axis_y=1, axis_z=0, min_angle=-90, max_angle=90)
+    """
     params = {"x": x, "y": y, "z": z, "axis_x": axis_x, "axis_y": axis_y, "axis_z": axis_z, "flip": flip}
     if component1_index is not None:
         params["component1_index"] = component1_index
@@ -866,7 +1200,28 @@ def create_slider_joint(
     axis_x: float = 1, axis_y: float = 0, axis_z: float = 0,
     min_distance: float = None, max_distance: float = None
 ) -> dict:
-    """Create a slider (linear) joint between two components"""
+    """
+    Create a slider (linear) joint between two components. Allows translation along one axis.
+
+    Used for drawers, linear actuators, and sliding mechanisms. The axis defines
+    the direction of allowed movement.
+
+    Args:
+        component1_index: First component index. Default: auto-detect.
+        component2_index: Second component index. Default: auto-detect.
+        x: Joint position X coordinate (cm). Default 0.
+        y: Joint position Y coordinate (cm). Default 0.
+        z: Joint position Z coordinate (cm). Default 0.
+        axis_x: Slide axis X component. Default 1 (X-axis sliding).
+        axis_y: Slide axis Y component. Default 0.
+        axis_z: Slide axis Z component. Default 0.
+        min_distance: Minimum slide distance (cm). Optional.
+        max_distance: Maximum slide distance (cm). Optional.
+
+    Examples:
+        create_slider_joint(component1_index=0, component2_index=1, axis_x=1, axis_y=0, axis_z=0)
+        create_slider_joint(component1_index=0, component2_index=1, min_distance=0, max_distance=5)
+    """
     params = {"x": x, "y": y, "z": z, "axis_x": axis_x, "axis_y": axis_y, "axis_z": axis_z}
     if component1_index is not None:
         params["component1_index"] = component1_index
@@ -884,8 +1239,23 @@ def create_rigid_joint(
     component2_index: int = None,
     x: float = 0, y: float = 0, z: float = 0
 ) -> dict:
-    """Create a rigid (fixed) joint between two components. No relative motion allowed.
-    Position defaults to origin since rigid joints lock components in place."""
+    """
+    Create a rigid (fixed) joint between two components. No relative motion allowed.
+
+    Locks two components together at their current positions. Used for permanently
+    attached parts like welded brackets or glued assemblies.
+
+    Args:
+        component1_index: First component index. Default: auto-detect.
+        component2_index: Second component index. Default: auto-detect.
+        x: Joint position X coordinate (cm). Default 0.
+        y: Joint position Y coordinate (cm). Default 0.
+        z: Joint position Z coordinate (cm). Default 0.
+
+    Examples:
+        create_rigid_joint(component1_index=0, component2_index=1)
+        create_rigid_joint(component1_index=0, component2_index=1, x=5, y=0, z=0)
+    """
     params = {"x": x, "y": y, "z": z}
     if component1_index is not None:
         params["component1_index"] = component1_index
@@ -902,7 +1272,30 @@ def create_cylindrical_joint(
     min_angle: float = None, max_angle: float = None,
     min_distance: float = None, max_distance: float = None
 ) -> dict:
-    """Create a cylindrical joint (rotation + translation along same axis)."""
+    """
+    Create a cylindrical joint allowing rotation and translation along the same axis.
+
+    Combines revolute and slider motion on one axis (2 DOF). Used for threaded
+    connections, telescoping tubes, and screw-type mechanisms.
+
+    Args:
+        component1_index: First component index. Default: auto-detect.
+        component2_index: Second component index. Default: auto-detect.
+        x: Joint position X coordinate (cm). Default 0.
+        y: Joint position Y coordinate (cm). Default 0.
+        z: Joint position Z coordinate (cm). Default 0.
+        axis_x: Axis X component. Default 0.
+        axis_y: Axis Y component. Default 0.
+        axis_z: Axis Z component. Default 1 (Z-axis).
+        min_angle: Minimum rotation limit (degrees). Optional.
+        max_angle: Maximum rotation limit (degrees). Optional.
+        min_distance: Minimum slide distance (cm). Optional.
+        max_distance: Maximum slide distance (cm). Optional.
+
+    Examples:
+        create_cylindrical_joint(component1_index=0, component2_index=1)
+        create_cylindrical_joint(component1_index=0, component2_index=1, min_distance=0, max_distance=3)
+    """
     params = {"x": x, "y": y, "z": z, "axis_x": axis_x, "axis_y": axis_y, "axis_z": axis_z}
     if component1_index is not None:
         params["component1_index"] = component1_index
@@ -927,7 +1320,30 @@ def create_pin_slot_joint(
     min_angle: float = None, max_angle: float = None,
     min_distance: float = None, max_distance: float = None
 ) -> dict:
-    """Create a pin-slot joint (rotation + sliding). Axis defines slot direction; rotation is perpendicular."""
+    """
+    Create a pin-slot joint allowing rotation and sliding along the axis direction.
+
+    The axis defines the slot sliding direction; rotation occurs perpendicular to the
+    slot axis. Used for adjustable hinges and cam mechanisms (2 DOF).
+
+    Args:
+        component1_index: First component index. Default: auto-detect.
+        component2_index: Second component index. Default: auto-detect.
+        x: Joint position X coordinate (cm). Default 0.
+        y: Joint position Y coordinate (cm). Default 0.
+        z: Joint position Z coordinate (cm). Default 0.
+        axis_x: Slot direction X component. Default 0.
+        axis_y: Slot direction Y component. Default 0.
+        axis_z: Slot direction Z component. Default 1 (Z-axis).
+        min_angle: Minimum rotation limit (degrees). Optional.
+        max_angle: Maximum rotation limit (degrees). Optional.
+        min_distance: Minimum slide distance (cm). Optional.
+        max_distance: Maximum slide distance (cm). Optional.
+
+    Examples:
+        create_pin_slot_joint(component1_index=0, component2_index=1, axis_x=1, axis_y=0, axis_z=0)
+        create_pin_slot_joint(component1_index=0, component2_index=1, min_distance=-2, max_distance=2)
+    """
     params = {"x": x, "y": y, "z": z, "axis_x": axis_x, "axis_y": axis_y, "axis_z": axis_z}
     if component1_index is not None:
         params["component1_index"] = component1_index
@@ -953,7 +1369,33 @@ def create_planar_joint(
     min_secondary_slide: float = None, max_secondary_slide: float = None,
     min_angle: float = None, max_angle: float = None
 ) -> dict:
-    """Create a planar joint (2D sliding + rotation on a plane). Axis defines plane normal. All DOF unconstrained by default."""
+    """
+    Create a planar joint allowing 2D sliding and rotation on a plane (3 DOF).
+
+    The axis defines the plane normal. Components can slide in two directions on
+    the plane and rotate around the normal. Used for flat surfaces that need to
+    slide freely (e.g., a puck on a table).
+
+    Args:
+        component1_index: First component index. Default: auto-detect.
+        component2_index: Second component index. Default: auto-detect.
+        x: Joint position X coordinate (cm). Default 0.
+        y: Joint position Y coordinate (cm). Default 0.
+        z: Joint position Z coordinate (cm). Default 0.
+        axis_x: Plane normal X component. Default 0.
+        axis_y: Plane normal Y component. Default 1 (XZ plane).
+        axis_z: Plane normal Z component. Default 0.
+        min_primary_slide: Minimum primary slide distance (cm). Optional.
+        max_primary_slide: Maximum primary slide distance (cm). Optional.
+        min_secondary_slide: Minimum secondary slide distance (cm). Optional.
+        max_secondary_slide: Maximum secondary slide distance (cm). Optional.
+        min_angle: Minimum rotation limit (degrees). Optional.
+        max_angle: Maximum rotation limit (degrees). Optional.
+
+    Examples:
+        create_planar_joint(component1_index=0, component2_index=1)
+        create_planar_joint(component1_index=0, component2_index=1, axis_x=0, axis_y=0, axis_z=1)
+    """
     params = {"x": x, "y": y, "z": z, "axis_x": axis_x, "axis_y": axis_y, "axis_z": axis_z}
     if component1_index is not None:
         params["component1_index"] = component1_index
@@ -982,7 +1424,29 @@ def create_ball_joint(
     min_roll: float = None, max_roll: float = None,
     min_yaw: float = None, max_yaw: float = None
 ) -> dict:
-    """Create a ball joint (spherical rotation, 3 DOF). No axis needed -- rotation is unconstrained in all directions."""
+    """
+    Create a ball joint allowing spherical rotation in all directions (3 DOF).
+
+    No axis needed -- rotation is unconstrained around the joint point.
+    Used for universal joints, camera mounts, and robotic linkages.
+
+    Args:
+        component1_index: First component index. Default: auto-detect.
+        component2_index: Second component index. Default: auto-detect.
+        x: Joint position X coordinate (cm). Default 0.
+        y: Joint position Y coordinate (cm). Default 0.
+        z: Joint position Z coordinate (cm). Default 0.
+        min_pitch: Minimum pitch limit (degrees). Optional.
+        max_pitch: Maximum pitch limit (degrees). Optional.
+        min_roll: Minimum roll limit (degrees). Optional.
+        max_roll: Maximum roll limit (degrees). Optional.
+        min_yaw: Minimum yaw limit (degrees). Optional.
+        max_yaw: Maximum yaw limit (degrees). Optional.
+
+    Examples:
+        create_ball_joint(component1_index=0, component2_index=1, x=0, y=5, z=0)
+        create_ball_joint(component1_index=0, component2_index=1, min_pitch=-45, max_pitch=45)
+    """
     params = {"x": x, "y": y, "z": z}
     if component1_index is not None:
         params["component1_index"] = component1_index
@@ -1004,7 +1468,20 @@ def create_ball_joint(
 
 @mcp.tool()
 def set_joint_angle(angle: float, joint_index: int = None) -> dict:
-    """Drive rotation on a revolute, cylindrical, or pin-slot joint (degrees)"""
+    """
+    Drive rotation on a revolute, cylindrical, or pin-slot joint.
+
+    Sets the angular position of a joint that supports rotation. Use to animate
+    or position jointed assemblies.
+
+    Args:
+        angle: Target rotation angle (degrees).
+        joint_index: Which joint to drive (default: most recent joint).
+
+    Examples:
+        set_joint_angle(angle=45)                          # Rotate most recent joint
+        set_joint_angle(angle=90, joint_index=0)           # Rotate first joint
+    """
     params = {"angle": angle}
     if joint_index is not None:
         params["joint_index"] = joint_index
@@ -1012,7 +1489,20 @@ def set_joint_angle(angle: float, joint_index: int = None) -> dict:
 
 @mcp.tool()
 def set_joint_distance(distance: float, joint_index: int = None) -> dict:
-    """Drive translation on a slider, cylindrical, or pin-slot joint (cm)"""
+    """
+    Drive translation on a slider, cylindrical, or pin-slot joint.
+
+    Sets the linear position of a joint that supports sliding. Use to animate
+    or position jointed assemblies.
+
+    Args:
+        distance: Target slide distance (cm).
+        joint_index: Which joint to drive (default: most recent joint).
+
+    Examples:
+        set_joint_distance(distance=2.5)                   # Slide most recent joint
+        set_joint_distance(distance=-1, joint_index=0)     # Slide first joint backward
+    """
     params = {"distance": distance}
     if joint_index is not None:
         params["joint_index"] = joint_index
@@ -1025,19 +1515,21 @@ def set_joint_distance(distance: float, joint_index: int = None) -> dict:
 @mcp.tool()
 def combine(target_body: int, tool_bodies: list, operation: str = "cut", keep_tools: bool = False) -> dict:
     """
-    Boolean operations: cut, join, or intersect bodies.
-    
+    Perform boolean operations (cut, join, or intersect) between bodies.
+
+    Modifies the target body using one or more tool bodies. Use get_body_info()
+    to verify body indices before combining.
+
     Args:
-        target_body: Index of body to modify (0 = first body)
-        tool_bodies: List of body indices to use as tools
-        operation: "cut" (subtract), "join" (add), or "intersect"
-        keep_tools: If True, keep tool bodies after operation
-    
+        target_body: Index of body to modify (0 = first body).
+        tool_bodies: List of body indices to use as tools.
+        operation: "cut" (subtract), "join" (add), or "intersect". Default "cut".
+        keep_tools: If True, keep tool bodies after operation. Default False.
+
     Examples:
-        combine(target_body=0, tool_bodies=[1], operation="cut")  # Cut body1 from body0
-        combine(target_body=0, tool_bodies=[1,2], operation="join")  # Merge 3 bodies
-    
-    Use get_body_info() to verify body indices before combining.
+        combine(target_body=0, tool_bodies=[1], operation="cut")       # Subtract body 1 from body 0
+        combine(target_body=0, tool_bodies=[1, 2], operation="join")   # Merge 3 bodies
+        combine(target_body=0, tool_bodies=[1], operation="intersect") # Keep only overlap
     """
     return send_fusion_command("combine", {
         "target_body": target_body,
@@ -1052,25 +1544,34 @@ def combine(target_body: int, tool_bodies: list, operation: str = "cut", keep_to
 @mcp.tool()
 def undo(count: int = 1) -> dict:
     """
-    Undo recent operations.
-    
+    Undo recent operations in the Fusion 360 design history.
+
+    Reverts the most recent operations. Returns the actual number of operations
+    undone, which may be less than requested if fewer operations exist.
+
     Args:
-        count: Number of operations to undo (default 1)
-    
-    Returns:
-        undone_count: How many operations were actually undone
+        count: Number of operations to undo (default 1).
+
+    Examples:
+        undo()                    # Undo last operation
+        undo(count=3)             # Undo last 3 operations
     """
     return send_fusion_command("undo", {"count": count})
 
 @mcp.tool()
 def delete_body(body_index: int = None) -> dict:
     """
-    Delete a body by index.
-    
+    Delete a body from the design by index.
+
+    Removes the specified body permanently. Use get_design_info() to see body count
+    and get_body_info() for detailed body information before deleting.
+
     Args:
-        body_index: Index of body to delete (default: most recent body)
-    
-    Use get_design_info() to see body count, get_body_info() for details.
+        body_index: Index of body to delete (default: most recent body).
+
+    Examples:
+        delete_body()                    # Delete most recent body
+        delete_body(body_index=0)        # Delete first body
     """
     params = {}
     if body_index is not None:
@@ -1080,12 +1581,17 @@ def delete_body(body_index: int = None) -> dict:
 @mcp.tool()
 def delete_sketch(sketch_index: int = None) -> dict:
     """
-    Delete a sketch by index.
-    
+    Delete a sketch from the design by index.
+
+    Removes the specified sketch and any geometry it contains. Features built
+    from this sketch (e.g., extrusions) may become invalid.
+
     Args:
-        sketch_index: Index of sketch to delete (default: most recent sketch)
-    
-    Use get_design_info() to see sketch count.
+        sketch_index: Index of sketch to delete (default: most recent sketch).
+
+    Examples:
+        delete_sketch()                      # Delete most recent sketch
+        delete_sketch(sketch_index=0)        # Delete first sketch
     """
     params = {}
     if sketch_index is not None:
@@ -1097,17 +1603,50 @@ def delete_sketch(sketch_index: int = None) -> dict:
 
 @mcp.tool()
 def export_stl(filepath: str) -> dict:
-    """Export the design as STL file for 3D printing"""
+    """
+    Export the design as an STL file for 3D printing.
+
+    STL is the most widely supported 3D printing format. Creates a triangulated
+    mesh of all visible bodies.
+
+    Args:
+        filepath: Full absolute path for the output STL file.
+
+    Examples:
+        export_stl(filepath="C:/exports/part.stl")
+    """
     return send_fusion_command("export_stl", {"filepath": filepath})
 
 @mcp.tool()
 def export_step(filepath: str) -> dict:
-    """Export the design as STEP file (CAD standard)"""
+    """
+    Export the design as a STEP file for CAD interchange.
+
+    STEP is the standard format for sharing precise CAD geometry between different
+    CAD software. Preserves exact surfaces, unlike mesh formats.
+
+    Args:
+        filepath: Full absolute path for the output STEP file.
+
+    Examples:
+        export_step(filepath="C:/exports/part.step")
+    """
     return send_fusion_command("export_step", {"filepath": filepath})
 
 @mcp.tool()
 def export_3mf(filepath: str) -> dict:
-    """Export the design as 3MF file (modern 3D printing format)"""
+    """
+    Export the design as a 3MF file for modern 3D printing.
+
+    3MF supports color, materials, and multi-body prints. Preferred over STL
+    for printers that support it. Falls back gracefully on older Fusion versions.
+
+    Args:
+        filepath: Full absolute path for the output 3MF file.
+
+    Examples:
+        export_3mf(filepath="C:/exports/part.3mf")
+    """
     return send_fusion_command("export_3mf", {"filepath": filepath})
 
 # =============================================================================
@@ -1116,7 +1655,20 @@ def export_3mf(filepath: str) -> dict:
 
 @mcp.tool()
 def import_mesh(filepath: str, unit: str = "mm") -> dict:
-    """Import STL, OBJ, or 3MF mesh file. Units: mm, cm, or in"""
+    """
+    Import a mesh file (STL, OBJ, or 3MF) into the design.
+
+    Imports triangulated mesh geometry. The imported mesh becomes a body that can
+    be used with other operations. Specify the unit the mesh was designed in.
+
+    Args:
+        filepath: Full absolute path to the mesh file (STL, OBJ, or 3MF).
+        unit: Unit of the mesh file -- "mm", "cm", or "in" (default "mm").
+
+    Examples:
+        import_mesh(filepath="C:/models/bracket.stl")
+        import_mesh(filepath="C:/models/part.obj", unit="cm")
+    """
     return send_fusion_command("import_mesh", {"filepath": filepath, "unit": unit})
 
 # =============================================================================
@@ -1125,29 +1677,47 @@ def import_mesh(filepath: str, unit: str = "mm") -> dict:
 
 @mcp.tool()
 def constrain_horizontal(curve_index: int) -> dict:
-    """Constrain a sketch line to be horizontal.
+    """
+    Constrain a sketch line to be horizontal (parallel to X axis).
+
+    Forces the line to remain perfectly horizontal regardless of other geometry changes.
 
     Args:
         curve_index: Index of the line to constrain. Use get_sketch_info() to see curves.
+
+    Examples:
+        constrain_horizontal(curve_index=0)
     """
     return send_fusion_command("constrain_horizontal", {"curve_index": curve_index})
 
 @mcp.tool()
 def constrain_vertical(curve_index: int) -> dict:
-    """Constrain a sketch line to be vertical.
+    """
+    Constrain a sketch line to be vertical (parallel to Y axis).
+
+    Forces the line to remain perfectly vertical regardless of other geometry changes.
 
     Args:
         curve_index: Index of the line to constrain. Use get_sketch_info() to see curves.
+
+    Examples:
+        constrain_vertical(curve_index=1)
     """
     return send_fusion_command("constrain_vertical", {"curve_index": curve_index})
 
 @mcp.tool()
 def constrain_perpendicular(curve_index: int, curve_index_2: int) -> dict:
-    """Constrain two sketch lines to be perpendicular (90 degrees).
+    """
+    Constrain two sketch lines to be perpendicular (90 degrees apart).
+
+    Forces the two lines to maintain a right angle relationship.
 
     Args:
-        curve_index: First line index
-        curve_index_2: Second line index
+        curve_index: First line index.
+        curve_index_2: Second line index.
+
+    Examples:
+        constrain_perpendicular(curve_index=0, curve_index_2=1)
     """
     return send_fusion_command("constrain_perpendicular", {
         "curve_index": curve_index, "curve_index_2": curve_index_2
@@ -1155,11 +1725,17 @@ def constrain_perpendicular(curve_index: int, curve_index_2: int) -> dict:
 
 @mcp.tool()
 def constrain_parallel(curve_index: int, curve_index_2: int) -> dict:
-    """Constrain two sketch lines to be parallel.
+    """
+    Constrain two sketch lines to remain parallel.
+
+    Forces the two lines to maintain the same angle regardless of geometry changes.
 
     Args:
-        curve_index: First line index
-        curve_index_2: Second line index
+        curve_index: First line index.
+        curve_index_2: Second line index.
+
+    Examples:
+        constrain_parallel(curve_index=0, curve_index_2=2)
     """
     return send_fusion_command("constrain_parallel", {
         "curve_index": curve_index, "curve_index_2": curve_index_2
@@ -1167,11 +1743,18 @@ def constrain_parallel(curve_index: int, curve_index_2: int) -> dict:
 
 @mcp.tool()
 def constrain_tangent(curve_index: int, curve_index_2: int) -> dict:
-    """Constrain two sketch curves to be tangent at their nearest endpoints.
+    """
+    Constrain two sketch curves to be tangent at their nearest endpoints.
+
+    Forces smooth (G1) continuity between curves. Works with lines, arcs,
+    circles, and splines.
 
     Args:
-        curve_index: First curve index (line, arc, circle, or spline)
-        curve_index_2: Second curve index
+        curve_index: First curve index (line, arc, circle, or spline).
+        curve_index_2: Second curve index.
+
+    Examples:
+        constrain_tangent(curve_index=0, curve_index_2=1)
     """
     return send_fusion_command("constrain_tangent", {
         "curve_index": curve_index, "curve_index_2": curve_index_2
@@ -1179,14 +1762,20 @@ def constrain_tangent(curve_index: int, curve_index_2: int) -> dict:
 
 @mcp.tool()
 def constrain_coincident(point_index: int, curve_index: int = None, point_index_2: int = None) -> dict:
-    """Constrain a sketch point to lie on a curve or coincide with another point.
+    """
+    Constrain a sketch point to lie on a curve or coincide with another point.
+
+    Provide either curve_index (point-on-curve) or point_index_2 (point-to-point),
+    not both. Use get_sketch_info() to see available indices.
 
     Args:
-        point_index: The point to constrain
-        curve_index: Target curve (point will be placed on this curve)
-        point_index_2: Target point (points will coincide). Provide curve_index OR point_index_2.
+        point_index: The point to constrain.
+        curve_index: Target curve (point will be placed on this curve). Optional.
+        point_index_2: Target point (points will coincide). Optional.
 
-    Use get_sketch_info() to see available point and curve indices.
+    Examples:
+        constrain_coincident(point_index=0, curve_index=2)          # Point on curve
+        constrain_coincident(point_index=0, point_index_2=3)        # Points coincide
     """
     params = {"point_index": point_index}
     if curve_index is not None:
@@ -1197,11 +1786,18 @@ def constrain_coincident(point_index: int, curve_index: int = None, point_index_
 
 @mcp.tool()
 def constrain_concentric(curve_index: int, curve_index_2: int) -> dict:
-    """Constrain two circles or arcs to share the same center point.
+    """
+    Constrain two circles or arcs to share the same center point.
+
+    Forces the two curves to be concentric (same center). Useful for creating
+    rings, washers, and nested circular features.
 
     Args:
-        curve_index: First circle/arc index
-        curve_index_2: Second circle/arc index
+        curve_index: First circle or arc index.
+        curve_index_2: Second circle or arc index.
+
+    Examples:
+        constrain_concentric(curve_index=0, curve_index_2=1)
     """
     return send_fusion_command("constrain_concentric", {
         "curve_index": curve_index, "curve_index_2": curve_index_2
@@ -1209,11 +1805,18 @@ def constrain_concentric(curve_index: int, curve_index_2: int) -> dict:
 
 @mcp.tool()
 def constrain_equal(curve_index: int, curve_index_2: int) -> dict:
-    """Constrain two sketch curves to have equal size (lines: same length, circles: same radius).
+    """
+    Constrain two sketch curves to have equal size.
+
+    For lines: forces equal length. For circles/arcs: forces equal radius.
+    Both curves must be the same type.
 
     Args:
-        curve_index: First curve index
-        curve_index_2: Second curve index (must be same type as first)
+        curve_index: First curve index.
+        curve_index_2: Second curve index (must be same type as first).
+
+    Examples:
+        constrain_equal(curve_index=0, curve_index_2=2)     # Equal length lines
     """
     return send_fusion_command("constrain_equal", {
         "curve_index": curve_index, "curve_index_2": curve_index_2
@@ -1222,16 +1825,23 @@ def constrain_equal(curve_index: int, curve_index_2: int) -> dict:
 @mcp.tool()
 def constrain_symmetric(symmetry_curve_index: int, curve_index: int = None, curve_index_2: int = None,
                          point_index: int = None, point_index_2: int = None) -> dict:
-    """Constrain two entities to be symmetric about a line.
+    """
+    Constrain two entities to be symmetric about a line of symmetry.
+
+    Mirrors the position and shape of one entity to match the other across the
+    symmetry line. Provide either (curve_index + curve_index_2) for curve symmetry
+    or (point_index + point_index_2) for point symmetry.
 
     Args:
-        symmetry_curve_index: The line of symmetry
-        curve_index: First curve (use with curve_index_2 for curve symmetry)
-        curve_index_2: Second curve
-        point_index: First point (use with point_index_2 for point symmetry)
-        point_index_2: Second point
+        symmetry_curve_index: The line of symmetry (must be a line curve).
+        curve_index: First curve for curve symmetry. Optional.
+        curve_index_2: Second curve for curve symmetry. Optional.
+        point_index: First point for point symmetry. Optional.
+        point_index_2: Second point for point symmetry. Optional.
 
-    Provide either (curve_index + curve_index_2) or (point_index + point_index_2).
+    Examples:
+        constrain_symmetric(symmetry_curve_index=4, curve_index=0, curve_index_2=2)
+        constrain_symmetric(symmetry_curve_index=4, point_index=0, point_index_2=1)
     """
     params = {"symmetry_curve_index": symmetry_curve_index}
     if curve_index is not None:
@@ -1250,15 +1860,21 @@ def constrain_symmetric(symmetry_curve_index: int, curve_index: int = None, curv
 
 @mcp.tool()
 def dimension_distance(value: float, curve_index: int = None, point_index: int = None, point_index_2: int = None) -> dict:
-    """Add a distance dimension to constrain length between two points or along a curve.
+    """
+    Add a distance dimension to constrain length between two points or along a curve.
+
+    Dimensions drive geometry -- specifying a value forces sketch entities to match.
+    Provide either curve_index (line length) or point_index + point_index_2 (point-to-point).
 
     Args:
-        value: The dimension value in cm (required -- dimensions drive geometry)
-        curve_index: Line to dimension (uses its start/end points)
-        point_index: First point (use with point_index_2 for point-to-point)
-        point_index_2: Second point
+        value: Dimension value (cm). Required -- dimensions drive geometry.
+        curve_index: Line to dimension (uses its start/end points). Optional.
+        point_index: First point for point-to-point distance. Optional.
+        point_index_2: Second point for point-to-point distance. Optional.
 
-    Provide either curve_index OR (point_index + point_index_2).
+    Examples:
+        dimension_distance(value=5, curve_index=0)                          # Set line length
+        dimension_distance(value=3, point_index=0, point_index_2=1)         # Point-to-point
     """
     params = {"value": value}
     if curve_index is not None:
@@ -1271,12 +1887,20 @@ def dimension_distance(value: float, curve_index: int = None, point_index: int =
 
 @mcp.tool()
 def dimension_radial(curve_index: int, value: float, type: str = "diameter") -> dict:
-    """Add a diameter or radius dimension to a circle or arc.
+    """
+    Add a diameter or radius dimension to a circle or arc.
+
+    Forces the circle or arc to match the specified size. Use "diameter" for
+    overall width or "radius" for half-width.
 
     Args:
-        curve_index: Index of the circle or arc to dimension
-        value: The dimension value in cm (diameter or radius depending on type)
-        type: "diameter" or "radius" (default "diameter")
+        curve_index: Index of the circle or arc to dimension.
+        value: Dimension value (cm) -- diameter or radius depending on type.
+        type: "diameter" or "radius" (default "diameter").
+
+    Examples:
+        dimension_radial(curve_index=0, value=5)                        # 5cm diameter
+        dimension_radial(curve_index=1, value=2.5, type="radius")       # 2.5cm radius
     """
     return send_fusion_command("dimension_radial", {
         "curve_index": curve_index, "value": value, "type": type
@@ -1284,12 +1908,20 @@ def dimension_radial(curve_index: int, value: float, type: str = "diameter") -> 
 
 @mcp.tool()
 def dimension_angular(curve_index: int, curve_index_2: int, value: float) -> dict:
-    """Add an angular dimension between two sketch lines.
+    """
+    Add an angular dimension between two sketch lines.
+
+    Forces the angle between two intersecting or non-parallel lines to match
+    the specified value.
 
     Args:
-        curve_index: First line index
-        curve_index_2: Second line index
-        value: Angle value in degrees
+        curve_index: First line index.
+        curve_index_2: Second line index.
+        value: Angle value (degrees).
+
+    Examples:
+        dimension_angular(curve_index=0, curve_index_2=1, value=45)     # 45 degree angle
+        dimension_angular(curve_index=2, curve_index_2=3, value=90)     # Right angle
     """
     return send_fusion_command("dimension_angular", {
         "curve_index": curve_index, "curve_index_2": curve_index_2, "value": value
