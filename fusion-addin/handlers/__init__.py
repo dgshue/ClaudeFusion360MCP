@@ -14,7 +14,9 @@ from .component import (
 )
 from .joint import (
     create_revolute_joint, create_slider_joint,
-    set_joint_angle, set_joint_distance
+    set_joint_angle, set_joint_distance,
+    create_rigid_joint, create_cylindrical_joint,
+    create_pin_slot_joint, create_planar_joint, create_ball_joint
 )
 from .sketch_primitives import (
     draw_spline, draw_ellipse, draw_slot, draw_point, draw_text
@@ -37,7 +39,7 @@ from .construction import construction_plane, construction_axis, construction_po
 from .hole_thread import hole, thread
 
 
-# Dict mapping all 42 tool names (excluding batch, which is handled inline)
+# Dict mapping all 47 tool names (excluding batch, which is handled inline)
 # to their handler functions. Each handler has signature:
 #   handler(design, rootComp, params) -> dict
 HANDLER_MAP = {
@@ -89,9 +91,14 @@ HANDLER_MAP = {
     'rotate_component': rotate_component,
     'check_interference': check_interference,
 
-    # Joint tools (4)
+    # Joint tools (9)
     'create_revolute_joint': create_revolute_joint,
     'create_slider_joint': create_slider_joint,
+    'create_rigid_joint': create_rigid_joint,
+    'create_cylindrical_joint': create_cylindrical_joint,
+    'create_pin_slot_joint': create_pin_slot_joint,
+    'create_planar_joint': create_planar_joint,
+    'create_ball_joint': create_ball_joint,
     'set_joint_angle': set_joint_angle,
     'set_joint_distance': set_joint_distance,
 
