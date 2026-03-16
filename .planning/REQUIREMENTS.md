@@ -136,8 +136,8 @@
 - [x] **DISC-01**: MCP Resource endpoints serving tool reference documentation per domain category
 - [x] **DISC-02**: MCP Resource endpoint serving coordinate system guide (units, XZ inversion, conventions)
 - [x] **DISC-03**: MCP Resource endpoints serving workflow guides (common shapes, assembly patterns)
-- [ ] **DISC-04**: MCP Prompt templates for common CAD workflows (box, cylinder, enclosure, gear, etc.)
-- [ ] **DISC-05**: All MCP tools have rich docstrings with parameter descriptions and usage examples
+- [x] **DISC-04**: MCP Prompt templates for common CAD workflows (box, cylinder, enclosure, gear, etc.)
+- [x] **DISC-05**: All MCP tools have rich docstrings with parameter descriptions and usage examples
 
 ## v2 Requirements
 
@@ -248,8 +248,8 @@
 | DISC-01 | Phase 5 | Complete |
 | DISC-02 | Phase 5 | Complete |
 | DISC-03 | Phase 5 | Complete |
-| DISC-04 | Phase 5 | Pending |
-| DISC-05 | Phase 5 | Pending |
+| DISC-04 | Phase 5 | Complete |
+| DISC-05 | Phase 5 | Complete |
 
 **Coverage:**
 - v1 requirements: 83 total

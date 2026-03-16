@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 2: Sketch Completeness** - Add new sketch primitives, geometric constraints, and sketch dimensions for full sketch API coverage
 - [x] **Phase 3: Advanced 3D Features** - Add sweep, loft, hole, thread, and construction geometry tools (completed 2026-03-15)
 - [ ] **Phase 4: Assembly Enhancement** - Add remaining joint types and sketch-on-face capability
-- [ ] **Phase 5: Parametric, Timeline, and Discoverability** - Add parametric design, timeline manipulation, MCP resources, prompts, and rich tool docs
+- [x] **Phase 5: Parametric, Timeline, and Discoverability** - Add parametric design, timeline manipulation, MCP resources, prompts, and rich tool docs (completed 2026-03-16)
 
 ## Phase Details
 
@@ -114,4 +114,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | 2. Sketch Completeness | 3/4 | In Progress|  |
 | 3. Advanced 3D Features | 3/3 | Complete   | 2026-03-15 |
 | 4. Assembly Enhancement | 0/2 | Not started | - |
-| 5. Parametric, Timeline, and Discoverability | 0/3 | Not started | - |
+| 5. Parametric, Timeline, and Discoverability | 3/3 | Complete   | 2026-03-16 |
