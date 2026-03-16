@@ -81,10 +81,11 @@ Plans:
   1. User can connect components with any mechanical joint type (rigid, cylindrical, pin-slot, planar, ball) appropriate to the design intent
   2. User can create sketches directly on body faces for in-context modeling of mating features
   3. User can build a multi-component assembly (e.g., a simple hinge or bracket) using components, joints, and motion driving from Phases 1-4 combined
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 04-01: TBD
+- [ ] 04-01-PLAN.md -- 5 new joint type handlers (rigid, cylindrical, pin-slot, planar, ball) + extend set_joint_angle/set_joint_distance for multi-DOF
+- [ ] 04-02-PLAN.md -- Extend create_sketch for face-based sketching + get_sketch_info face frame reporting
 
 ### Phase 5: Parametric, Timeline, and Discoverability
 **Goal**: Users can drive designs with named parameters, navigate design history, and AI models can self-discover tools and workflows without external documentation
@@ -110,5 +111,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | 1. Foundation and Gap Closure | 5/5 | Complete |  |
 | 2. Sketch Completeness | 3/4 | In Progress|  |
 | 3. Advanced 3D Features | 3/3 | Complete   | 2026-03-15 |
-| 4. Assembly Enhancement | 0/1 | Not started | - |
+| 4. Assembly Enhancement | 0/2 | Not started | - |
 | 5. Parametric, Timeline, and Discoverability | 0/1 | Not started | - |
