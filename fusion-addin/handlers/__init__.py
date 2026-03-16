@@ -37,9 +37,11 @@ from .sketch_dimensions import (
 from .sketch_query import get_sketch_info
 from .construction import construction_plane, construction_axis, construction_point
 from .hole_thread import hole, thread
+from .parametric import create_parameter, set_parameter
+from .timeline import get_timeline, edit_at_timeline, create_marker, undo_to_marker
 
 
-# Dict mapping all 47 tool names (excluding batch, which is handled inline)
+# Dict mapping all 53 tool names (excluding batch, which is handled inline)
 # to their handler functions. Each handler has signature:
 #   handler(design, rootComp, params) -> dict
 HANDLER_MAP = {
@@ -141,4 +143,14 @@ HANDLER_MAP = {
     # Manufacturing features (Phase 3)
     'hole': hole,
     'thread': thread,
+
+    # Parametric design (Phase 5)
+    'create_parameter': create_parameter,
+    'set_parameter': set_parameter,
+
+    # Timeline navigation (Phase 5)
+    'get_timeline': get_timeline,
+    'edit_at_timeline': edit_at_timeline,
+    'create_marker': create_marker,
+    'undo_to_marker': undo_to_marker,
 }
