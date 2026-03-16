@@ -90,19 +90,32 @@ def batch(commands: list) -> dict:
 # =============================================================================
 
 @mcp.tool()
-def create_sketch(plane: str, offset: float = 0) -> dict:
+def create_sketch(plane: str = "XY", offset: float = 0, body_index: int = None, face: str = None) -> dict:
     """
-    Create a new sketch on a construction plane (XY, XZ, or YZ) and enter edit mode.
-    
+    Create a new sketch and enter edit mode.
+
+    By default creates sketch on a construction plane (XY, XZ, or YZ).
+    Optionally sketch on a body face by providing body_index + face params.
+    When face is provided, the plane param is ignored.
+
     Args:
-        plane: "XY" (horizontal), "XZ" (vertical front), or "YZ" (side)
-        offset: Distance to offset sketch plane from origin (cm). Default 0.
-    
+        plane: Construction plane name (XY, XZ, YZ). Ignored if face is provided.
+        offset: Offset distance from plane (cm). Only for construction planes.
+        body_index: Body to sketch on (0 = first body). Required with face.
+        face: Face selector - semantic name ('top_face', 'bottom_face') or integer index. Use get_body_info() to see faces.
+
     Examples:
-        create_sketch(plane="XY")           # Horizontal at origin
-        create_sketch(plane="XZ", offset=5) # Vertical, 5cm forward
+        create_sketch(plane="XY")                          # Horizontal at origin
+        create_sketch(plane="XZ", offset=5)                # Vertical, 5cm forward
+        create_sketch(body_index=0, face="top_face")       # Sketch on body's top face
+        create_sketch(body_index=0, face="0")              # Sketch on face index 0
     """
-    return send_fusion_command("create_sketch", {"plane": plane, "offset": offset})
+    params = {"plane": plane, "offset": offset}
+    if body_index is not None:
+        params["body_index"] = body_index
+    if face is not None:
+        params["face"] = face
+    return send_fusion_command("create_sketch", params)
 
 @mcp.tool()
 def finish_sketch() -> dict:
