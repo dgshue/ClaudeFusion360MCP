@@ -133,9 +133,9 @@
 
 ### Discoverability
 
-- [ ] **DISC-01**: MCP Resource endpoints serving tool reference documentation per domain category
-- [ ] **DISC-02**: MCP Resource endpoint serving coordinate system guide (units, XZ inversion, conventions)
-- [ ] **DISC-03**: MCP Resource endpoints serving workflow guides (common shapes, assembly patterns)
+- [x] **DISC-01**: MCP Resource endpoints serving tool reference documentation per domain category
+- [x] **DISC-02**: MCP Resource endpoint serving coordinate system guide (units, XZ inversion, conventions)
+- [x] **DISC-03**: MCP Resource endpoints serving workflow guides (common shapes, assembly patterns)
 - [ ] **DISC-04**: MCP Prompt templates for common CAD workflows (box, cylinder, enclosure, gear, etc.)
 - [ ] **DISC-05**: All MCP tools have rich docstrings with parameter descriptions and usage examples
 
@@ -245,9 +245,9 @@
 | TIME-01 | Phase 5 | Complete |
 | TIME-02 | Phase 5 | Complete |
 | TIME-03 | Phase 5 | Complete |
-| DISC-01 | Phase 5 | Pending |
-| DISC-02 | Phase 5 | Pending |
-| DISC-03 | Phase 5 | Pending |
+| DISC-01 | Phase 5 | Complete |
+| DISC-02 | Phase 5 | Complete |
+| DISC-03 | Phase 5 | Complete |
 | DISC-04 | Phase 5 | Pending |
 | DISC-05 | Phase 5 | Pending |
 
