@@ -14,7 +14,7 @@ All MCP dimensions are in **centimeters**, but users often think in millimeters.
 - A "50mm box" becomes half a meter
 
 ### Solution
-**Always convert:** `mm ÃƒÂ· 10 = cm`
+**Always convert:** `mm / 10 = cm`
 
 | User Says | You Enter |
 |-----------|-----------|
@@ -72,12 +72,12 @@ User asks to "save" but Claude exports a STEP file. Design is lost when Fusion c
 | **Save** | Persists .f3d to Fusion cloud |
 | **Export** | Creates external file (STL, STEP) |
 
-**Export Ã¢â€°Â  Save.** They are completely different operations.
+**Export != Save.** They are completely different operations.
 
 ### Solution
 The MCP currently lacks a save command. When user says "save":
 1. Inform them the MCP cannot save directly
-2. Ask them to manually save (Ctrl+S or File Ã¢â€ â€™ Save)
+2. Ask them to manually save (Ctrl+S or File  >  Save)
 3. Wait for confirmation
 4. Then export if requested
 
@@ -116,7 +116,7 @@ Deleting a component causes index shifts, breaking subsequent operations.
 Holes for fasteners are wrong size or position.
 
 ### Solution
-Standard clearance holes (mm Ã¢â€ â€™ cm for MCP):
+Standard clearance holes (mm  >  cm for MCP):
 
 | Fastener | Clearance Hole | Enter in MCP |
 |----------|---------------|--------------|
@@ -192,18 +192,18 @@ To satisfy BOTH requirements, Sketch Y must map to -World Z.
 
 ```
 XZ Plane Coordinate Mapping:
-  Sketch X  â†’  World X   (unchanged)
-  Sketch Y  â†’  World -Z  (INVERTED!)
-  Extrude+  â†’  World +Y  (as expected)
+  Sketch X   >   World X   (unchanged)
+  Sketch Y   >   World -Z  (INVERTED!)
+  Extrude+   >   World +Y  (as expected)
 ```
 
 ### Plane Comparison
 
 | Plane | Sketch X | Sketch Y | Normal (Extrude+) | Natural? |
 |-------|----------|----------|-------------------|----------|
-| XY | World +X | World +Y | World +Z | âœ“ Yes |
-| YZ | World +Y | World +Z | World +X | âœ“ Yes |
-| **XZ** | World +X | **World -Z** | World +Y | âœ— **INVERTED** |
+| XY | World +X | World +Y | World +Z | [ok] Yes |
+| YZ | World +Y | World +Z | World +X | [ok] Yes |
+| **XZ** | World +X | **World -Z** | World +Y | [X] **INVERTED** |
 
 ### Solution: Negate Y for Z Positioning
 
@@ -282,5 +282,62 @@ combine(operation="join", ...)
 ### Hard Rule
 **NEVER call combine() without explicit user approval.** The 10 seconds saved by auto-joining can cost 10 minutes of cleanup when something is wrong.
 
+
+## 13. Thread `modeled` Flag  --  Cosmetic vs Physical Geometry
+
+### Problem
+By default, `thread()` creates **cosmetic** threads that display in Fusion 360 but produce a smooth bore in STL/3MF exports. 3D-printed parts won't have functional threads.
+
+### Solution
+Pass `modeled=True` to create physical thread geometry:
+```python
+thread(face=0, is_internal=True, modeled=True)
+```
+
+### Notes
+- Modeled threads increase STL file size significantly (~60% larger)
+- All thread standards (ISO Metric, ANSI Unified, ANSI Metric) support modeled geometry
+- STL export now uses high mesh refinement by default for accurate thread detail
+- `face="auto"` finds the first cylindrical face  --  verify it picked the right one with `get_body_info()`
+
 ---
-*Document current as of MCP v8.2*
+
+## 14. Handler Code Changes Require Add-in Reload
+
+### Problem
+After modifying handler `.py` files in the add-in directory, changes don't take effect even after clearing `__pycache__`.
+
+### Root Cause
+Python caches imported modules in `sys.modules`. Clearing `__pycache__` doesn't affect already-loaded module objects in memory.
+
+### Solution (Fixed in v0.5.0)
+The add-in now uses `importlib.reload()` on all handler and helper submodules during startup. To pick up code changes:
+
+1. Copy updated files to the add-in directory
+2. **Toggle the add-in off/on** in Fusion (Shift+S > Add-Ins > FusionMCP > Stop > Run)
+3. No full Fusion restart needed
+
+---
+
+## 15. Edge Indices Shift After Fillet/Chamfer Operations
+
+### Problem
+After applying a fillet or chamfer, all edge indices change. Using cached indices results in `FILLET_NO_EDGE_FOUND` errors.
+
+### Solution
+Always re-read `get_body_info()` immediately before each fillet/chamfer operation. Never reuse edge indices across fillet passes.
+
+---
+
+## 16. Extrude `operation` Parameter Was Silently Ignored (Fixed v0.5.0)
+
+### Problem
+`extrude(operation='cut')` always created a new body. The handler ignored the operation parameter.
+
+### Solution
+Fixed. The `operation` parameter now correctly maps to `join`, `cut`, `intersect`, or `new_body` (default).
+
+---
+
+---
+*Document current as of v0.5.0  --  March 2025*

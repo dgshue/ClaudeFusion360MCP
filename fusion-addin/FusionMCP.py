@@ -1,177 +1,241 @@
-﻿import adsk.core
+import adsk.core
 import adsk.fusion
-import traceback
 import json
-import time
+import os
+import sys
 import threading
+import traceback
+import importlib
 from pathlib import Path
 
+# Ensure sub-packages are importable from the add-in directory
+_addin_dir = os.path.dirname(os.path.abspath(__file__))
+if _addin_dir not in sys.path:
+    sys.path.insert(0, _addin_dir)
+
+# Force-reload handler modules so code changes take effect without full Fusion restart.
+# Python caches imported modules in sys.modules; clearing __pycache__ alone is not enough.
+def _reload_handlers():
+    """Reload all handler and helper submodules, then the handlers package."""
+    import handlers
+    # Reload helpers first (handlers depend on them)
+    for mod_name in sorted(list(sys.modules.keys())):
+        if mod_name.startswith('helpers.'):
+            importlib.reload(sys.modules[mod_name])
+    # Reload each handler submodule
+    for mod_name in sorted(list(sys.modules.keys())):
+        if mod_name.startswith('handlers.') and mod_name != 'handlers':
+            importlib.reload(sys.modules[mod_name])
+    # Reload the handlers package itself (re-imports from submodules)
+    importlib.reload(handlers)
+    return handlers.HANDLER_MAP
+
+HANDLER_MAP = _reload_handlers()
+
+from helpers.errors import wrap_handler
+
+# Module-level state
 app = None
-ui = None
-stop_thread = False
+handlers = []  # prevent GC of event handlers (Pitfall 2)
+stop_flag = None
+custom_event = None
 monitor_thread = None
 
 COMM_DIR = Path.home() / "fusion_mcp_comm"
+CUSTOM_EVENT_ID = 'FusionMCP_CommandEvent'
 
-def run(context):
-    global app, ui, monitor_thread, stop_thread
-    try:
-        app = adsk.core.Application.get()
-        ui = app.userInterface
-        COMM_DIR.mkdir(exist_ok=True)
-        stop_thread = False
-        monitor_thread = threading.Thread(target=monitor_commands, daemon=True)
-        monitor_thread.start()
-        ui.messageBox('Fusion MCP Started!\n\nListening at:\n' + str(COMM_DIR))
-    except:
-        if ui:
-            ui.messageBox('Failed:\n' + traceback.format_exc())
 
-def stop(context):
-    global stop_thread, ui
-    try:
-        stop_thread = True
-        if ui:
-            ui.messageBox('Fusion MCP Stopped')
-    except:
-        pass
+class CommandEventHandler(adsk.core.CustomEventHandler):
+    """Handles commands on the main thread via CustomEvent."""
 
-def monitor_commands():
-    global stop_thread
-    while not stop_thread:
+    def __init__(self):
+        super().__init__()
+
+    def notify(self, args):
         try:
-            cmd_files = list(COMM_DIR.glob("command_*.json"))
-            for cmd_file in cmd_files:
-                try:
-                    with open(cmd_file, 'r') as f:
-                        command = json.load(f)
-                    result = execute_command(command)
-                    resp_file = COMM_DIR / f"response_{command['id']}.json"
-                    with open(resp_file, 'w') as f:
-                        json.dump(result, f, indent=2)
-                except Exception as e:
-                    pass
-            time.sleep(0.1)
-        except:
-            pass
+            event_data = json.loads(args.additionalInfo)
+            command = event_data['command']
+            cmd_id = event_data['id']
+
+            # Execute on main thread -- safe to call Fusion API here
+            result = execute_command(command)
+
+            # Write response file
+            resp_file = COMM_DIR / f"response_{cmd_id}.json"
+            with open(resp_file, 'w') as f:
+                json.dump(result, f, indent=2)
+        except Exception as e:
+            # Write error response so the MCP server doesn't hang
+            try:
+                cmd_id = event_data.get('id', 'unknown')
+            except Exception:
+                cmd_id = 'unknown'
+            resp_file = COMM_DIR / f"response_{cmd_id}.json"
+            try:
+                with open(resp_file, 'w') as f:
+                    json.dump({
+                        "success": False,
+                        "error": f"Internal error processing command: {str(e)}"
+                    }, f, indent=2)
+            except Exception:
+                pass  # File write failure during error handling -- nothing more we can do
+            # Log full traceback for debugging
+            app.log(f"FusionMCP CommandEventHandler error: {traceback.format_exc()}")
+
+
+class MonitorThread(threading.Thread):
+    """Monitors COMM_DIR for command files and fires CustomEvents.
+
+    This thread does NO Fusion API calls -- it only reads files and fires
+    events. All Fusion API work happens in CommandEventHandler.notify()
+    on the main thread.
+    """
+
+    def __init__(self, event):
+        threading.Thread.__init__(self)
+        self.stopped = event
+        self.daemon = True
+
+    def run(self):
+        while not self.stopped.wait(0.1):
+            try:
+                cmd_files = list(COMM_DIR.glob("command_*.json"))
+                for cmd_file in cmd_files:
+                    try:
+                        with open(cmd_file, 'r') as f:
+                            command = json.load(f)
+                        # Remove command file after reading
+                        try:
+                            cmd_file.unlink()
+                        except OSError:
+                            pass  # File already removed or locked -- non-fatal
+                        # Fire custom event -- handler runs on main thread
+                        app.fireCustomEvent(CUSTOM_EVENT_ID, json.dumps({
+                            'command': command,
+                            'id': command.get('id', 'unknown')
+                        }))
+                    except (json.JSONDecodeError, KeyError):
+                        # Malformed command file -- skip it
+                        try:
+                            cmd_file.unlink()
+                        except OSError:
+                            pass
+                    except Exception:
+                        pass  # File I/O error during polling -- non-fatal
+            except Exception:
+                pass  # COMM_DIR glob error -- non-fatal, will retry on next loop
+
 
 def execute_command(command):
+    """Dispatch a command to the appropriate handler.
+
+    Uses HANDLER_MAP for dict-based dispatch. The special 'batch' command
+    is handled inline -- it iterates commands and stops on first error,
+    returning partial results.
+    """
     global app
     tool_name = command.get('name')
     params = command.get('params', {})
+
     try:
         design = app.activeProduct
         if not design:
-            return {"success": False, "error": "No active design"}
+            return {"success": False, "error": "No active design. Open or create a design first."}
         rootComp = design.rootComponent
-        
-        if tool_name == 'create_sketch':
-            return create_sketch(design, rootComp, params)
-        elif tool_name == 'draw_circle':
-            return draw_circle(design, rootComp, params)
-        elif tool_name == 'draw_rectangle':
-            return draw_rectangle(design, rootComp, params)
-        elif tool_name == 'extrude':
-            return extrude_profile(design, rootComp, params)
-        elif tool_name == 'revolve':
-            return revolve_profile(design, rootComp, params)
-        elif tool_name == 'fillet':
-            return add_fillet(design, rootComp, params)
-        elif tool_name == 'finish_sketch':
-            return finish_sketch(design, rootComp, params)
-        elif tool_name == 'fit_view':
-            return fit_view(design, rootComp, params)
-        elif tool_name == 'get_design_info':
-            return get_design_info(design, rootComp, params)
-        else:
-            return {"success": False, "error": f"Unknown tool: {tool_name}"}
     except Exception as e:
-        return {"success": False, "error": str(e)}
+        return {"success": False, "error": f"Cannot access active design: {str(e)}"}
 
-def create_sketch(design, rootComp, params):
-    plane_name = params.get('plane', 'XY')
-    plane_map = {
-        'XY': rootComp.xYConstructionPlane,
-        'XZ': rootComp.xZConstructionPlane,
-        'YZ': rootComp.yZConstructionPlane
-    }
-    plane = plane_map.get(plane_name)
-    sketch = rootComp.sketches.add(plane)
-    return {"success": True, "sketch_name": sketch.name}
+    # Special case: batch command
+    if tool_name == 'batch':
+        return _execute_batch(design, rootComp, params)
 
-def draw_circle(design, rootComp, params):
-    activeEdit = design.activeEditObject
-    if not activeEdit:
-        return {"success": False, "error": "No active sketch"}
-    sketch = activeEdit
-    center = adsk.core.Point3D.create(params['center_x'], params['center_y'], 0)
-    sketch.sketchCurves.sketchCircles.addByCenterRadius(center, params['radius'])
-    return {"success": True}
+    # Dict-based dispatch
+    handler = HANDLER_MAP.get(tool_name)
+    if handler is None:
+        available = sorted(HANDLER_MAP.keys())
+        return {
+            "success": False,
+            "error": f"Unknown tool: '{tool_name}'. Available tools: {', '.join(available)}"
+        }
 
-def draw_rectangle(design, rootComp, params):
-    activeEdit = design.activeEditObject
-    if not activeEdit:
-        return {"success": False, "error": "No active sketch"}
-    sketch = activeEdit
-    p1 = adsk.core.Point3D.create(params['x1'], params['y1'], 0)
-    p2 = adsk.core.Point3D.create(params['x2'], params['y2'], 0)
-    sketch.sketchCurves.sketchLines.addTwoPointRectangle(p1, p2)
-    return {"success": True}
+    return wrap_handler(tool_name, handler, design, rootComp, params)
 
-def extrude_profile(design, rootComp, params):
-    if rootComp.sketches.count == 0:
-        return {"success": False, "error": "No sketches"}
-    sketch = rootComp.sketches.item(rootComp.sketches.count - 1)
-    if sketch.profiles.count == 0:
-        return {"success": False, "error": "No profiles"}
-    profile = sketch.profiles.item(sketch.profiles.count - 1)
-    extrudes = rootComp.features.extrudeFeatures
-    extInput = extrudes.createInput(profile, adsk.fusion.FeatureOperations.NewBodyFeatureOperation)
-    extInput.setDistanceExtent(False, adsk.core.ValueInput.createByReal(params['distance']))
-    extrude = extrudes.add(extInput)
-    return {"success": True, "feature_name": extrude.name}
 
-def revolve_profile(design, rootComp, params):
-    if rootComp.sketches.count == 0:
-        return {"success": False, "error": "No sketches"}
-    sketch = rootComp.sketches.item(rootComp.sketches.count - 1)
-    if sketch.profiles.count == 0:
-        return {"success": False, "error": "No profiles"}
-    profile = sketch.profiles.item(sketch.profiles.count - 1)
-    axis = rootComp.yConstructionAxis
-    revolves = rootComp.features.revolveFeatures
-    revInput = revolves.createInput(profile, axis, adsk.fusion.FeatureOperations.NewBodyFeatureOperation)
-    import math
-    revInput.setAngleExtent(False, adsk.core.ValueInput.createByReal(math.radians(params['angle'])))
-    revolve = revolves.add(revInput)
-    return {"success": True, "feature_name": revolve.name}
+def _execute_batch(design, rootComp, params):
+    """Execute a batch of commands, stopping on first error."""
+    commands_list = params.get('commands', [])
+    if not commands_list:
+        return {"success": False, "error": "Batch requires a 'commands' array."}
 
-def add_fillet(design, rootComp, params):
-    if rootComp.bRepBodies.count == 0:
-        return {"success": False, "error": "No bodies"}
-    body = rootComp.bRepBodies.item(rootComp.bRepBodies.count - 1)
-    edges = adsk.core.ObjectCollection.create()
-    for edge in body.edges:
-        edges.add(edge)
-    fillets = rootComp.features.filletFeatures
-    filletInput = fillets.createInput()
-    filletInput.addConstantRadiusEdgeSet(edges, adsk.core.ValueInput.createByReal(params['radius']), True)
-    fillet = fillets.add(filletInput)
-    return {"success": True, "feature_name": fillet.name}
+    results = []
+    for i, cmd in enumerate(commands_list):
+        sub_name = cmd.get('name', '')
+        sub_params = cmd.get('params', {})
 
-def finish_sketch(design, rootComp, params):
-    design.activeEditObject = None
-    return {"success": True, "message": "Sketch finished"}
+        handler = HANDLER_MAP.get(sub_name)
+        if handler is None:
+            results.append({
+                "command_index": i,
+                "tool": sub_name,
+                "success": False,
+                "error": f"Unknown tool: '{sub_name}'"
+            })
+            return {
+                "success": False,
+                "error": f"Batch stopped at command {i}: unknown tool '{sub_name}'",
+                "results": results
+            }
 
-def fit_view(design, rootComp, params):
-    global app
-    app.activeViewport.fit()
-    return {"success": True}
+        result = wrap_handler(sub_name, handler, design, rootComp, sub_params)
+        result["command_index"] = i
+        result["tool"] = sub_name
+        results.append(result)
 
-def get_design_info(design, rootComp, params):
-    return {
-        "success": True,
-        "design_name": design.parentDocument.name,
-        "body_count": rootComp.bRepBodies.count,
-        "sketch_count": rootComp.sketches.count
-    }
+        if not result.get("success", False):
+            return {
+                "success": False,
+                "error": f"Batch stopped at command {i} ({sub_name}): {result.get('error', 'unknown error')}",
+                "results": results
+            }
+
+    return {"success": True, "results": results, "completed": len(results)}
+
+
+def run(context):
+    global app, custom_event, stop_flag, monitor_thread, handlers, HANDLER_MAP
+    try:
+        app = adsk.core.Application.get()
+        COMM_DIR.mkdir(exist_ok=True)
+
+        # Reload handlers so code changes take effect on add-in restart
+        HANDLER_MAP = _reload_handlers()
+
+        # Register custom event for main-thread execution
+        custom_event = app.registerCustomEvent(CUSTOM_EVENT_ID)
+        handler = CommandEventHandler()
+        custom_event.add(handler)
+        handlers.append(handler)  # prevent GC
+
+        # Start monitor thread (only does file I/O + fireCustomEvent)
+        stop_flag = threading.Event()
+        monitor_thread = MonitorThread(stop_flag)
+        monitor_thread.start()
+
+        app.log(f"FusionMCP started. Listening at: {COMM_DIR}")
+    except Exception:
+        app.log(f"FusionMCP failed to start: {traceback.format_exc()}")
+
+
+def stop(context):
+    global stop_flag, custom_event, handlers, monitor_thread
+    try:
+        if stop_flag:
+            stop_flag.set()
+        if custom_event and handlers:
+            custom_event.remove(handlers[0])
+        if custom_event:
+            app.unregisterCustomEvent(CUSTOM_EVENT_ID)
+        handlers.clear()
+        app.log("FusionMCP stopped.")
+    except Exception:
+        pass  # Cleanup errors during shutdown -- non-fatal

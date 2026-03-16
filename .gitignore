@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.pyo
+.bg-shell/
+.gsd/
+.planning/
+qa/
+test-data/
+*.3mf
+*.stl
+.vscode/
+.mcp.json
